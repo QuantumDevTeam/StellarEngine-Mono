@@ -18,7 +18,7 @@ public class FileStream(IFile file, Stream stream)
     public Stream Stream { get; } = stream;
 
     public FileStream(IFile file, IFileProviderFactory fileProviderFactory, FileAccess access)
-        : this(file, fileProviderFactory.GetFileProvider(file.Location.Domain).Open(file.Location, access))
+        : this(file, fileProviderFactory.GetFileProvider(file.Path.Domain).Open(file.Path, access))
     {
     }
 

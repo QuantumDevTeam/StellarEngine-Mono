@@ -2,6 +2,7 @@ using System;
 using Stellar.Kernel.FileSystem.Provider;
 using Stellar.Kernel.Quantization;
 
+// ReSharper disable once CheckNamespace
 namespace Stellar.Kernel.FileSystem
 {
     /// <summary>
@@ -20,23 +21,18 @@ namespace Stellar.Kernel.FileSystem
         string Name { get; }
 
         /// <summary>
-        /// Gets the full path of the file within its domain (as stored in <see cref="ILocation.Path"/>).
+        /// Gets the full path of the file within its domain (as stored in <see cref="IPath.Value"/>).
         /// </summary>
         string FullPath { get; }
 
         /// <summary>
         /// Gets the file size in bytes. Returns <c>-1</c> if the size is unknown (e.g., for virtual files).
         /// </summary>
-        long Length { get; }
+        long Size { get; }
 
         /// <summary>
         /// Gets the file creation time in UTC, or <c>null</c> if not supported by the underlying provider.
         /// </summary>
         DateTime? CreationTimeUtc { get; }
-
-        /// <summary>
-        /// Gets the last write time in UTC, or <c>null</c> if not supported.
-        /// </summary>
-        DateTime? LastWriteTimeUtc { get; }
     }
 }

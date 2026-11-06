@@ -11,7 +11,7 @@ public class FileSystemFileProvider()
 {
     #region Deps
 
-    private string GetFullPath(ILocation location) => Path.Combine(location.Domain.Value, location.Path);
+    private string GetFullPath(IPath path) => System.IO.Path.Combine(path.Domain.Value, path.Value);
 
     public class FSFileInfo(System.IO.FileInfo fileInfo) : IFileInfo
     {
@@ -28,56 +28,56 @@ public class FileSystemFileProvider()
 
     public bool CanHandle(IDomain domain) => domain.Type == DomainType.Directory;
 
-    public bool Exists(ILocation location) => System.IO.File.Exists(GetFullPath(location));
+    public bool Exists(IPath path) => System.IO.File.Exists(GetFullPath(path));
 
-    public IFileInfo GetFileInfo(ILocation location) => new FSFileInfo(new System.IO.FileInfo(GetFullPath(location)));
+    public IFileInfo GetFileInfo(IPath path) => new FSFileInfo(new System.IO.FileInfo(GetFullPath(path)));
 
-    public Stream OpenRead(ILocation location)
+    public Stream OpenRead(IPath path)
     {
         lock (_lock)
         {
-            var stream = System.IO.File.OpenRead(GetFullPath(location));
+            var stream = System.IO.File.OpenRead(GetFullPath(path));
 
             return stream is { CanRead: true }
                 ? stream
                 : throw new FileNotFoundException(
-                    $"Resource `{location}` not found or can not be opened for reading.");
+                    $"Resource `{path}` not found or can not be opened for reading.");
         }
     }
 
-    public Stream OpenWrite(ILocation location)
+    public Stream OpenWrite(IPath path)
     {
         lock (_lock)
         {
-            var stream = System.IO.File.OpenWrite(GetFullPath(location));
+            var stream = System.IO.File.OpenWrite(GetFullPath(path));
 
             return stream is { CanWrite: true }
                 ? stream
                 : throw new FileNotFoundException(
-                    $"Resource `{location}` not found or can not be opened for writing.");
+                    $"Resource `{path}` not found or can not be opened for writing.");
         }
     }
 
-    public Stream OpenReadWrite(ILocation location)
+    public Stream OpenReadWrite(IPath path)
     {
         lock (_lock)
         {
-            var stream = System.IO.File.Open(GetFullPath(location), FileMode.OpenOrCreate, FileAccess.ReadWrite);
+            var stream = System.IO.File.Open(GetFullPath(path), FileMode.OpenOrCreate, FileAccess.ReadWrite);
 
             return stream is { CanRead: true, CanWrite: true }
                 ? stream
                 : throw new FileNotFoundException(
-                    $"Resource `{location}` not found or can not be opened for reading and writing.");
+                    $"Resource `{path}` not found or can not be opened for reading and writing.");
         }
     }
 
-    public Stream Open(ILocation location, FileAccess access)
+    public Stream Open(IPath path, FileAccess access)
     {
         return access switch
         {
-            FileAccess.Read => OpenRead(location),
-            FileAccess.Write => OpenWrite(location),
-            FileAccess.ReadWrite => OpenReadWrite(location),
+            FileAccess.Read => OpenRead(path),
+            FileAccess.Write => OpenWrite(path),
+            FileAccess.ReadWrite => OpenReadWrite(path),
             _ => throw new ArgumentOutOfRangeException(nameof(access), access, null)
         };
     }

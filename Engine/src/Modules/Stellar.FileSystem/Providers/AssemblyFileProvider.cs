@@ -23,46 +23,46 @@ public class AssemblyFileProvider(Assembly assembly)
 
     public bool CanHandle(IDomain domain) => domain.Type == DomainType.Assembly;
 
-    public bool Exists(ILocation location) => assembly.GetManifestResourceInfo(location.Path) != null;
+    public bool Exists(IPath path) => assembly.GetManifestResourceInfo(path.Value) != null;
 
-    public IFileInfo GetFileInfo(ILocation location) => new AFileInfo(
-        assembly.GetManifestResourceInfo(location.Path)?.FileName ?? "", location.Path,
-        assembly.GetManifestResourceStream(location.Path)?.Length ?? -1);
+    public IFileInfo GetFileInfo(IPath path) => new AFileInfo(
+        assembly.GetManifestResourceInfo(path.Value)?.FileName ?? "", path.Value,
+        assembly.GetManifestResourceStream(path.Value)?.Length ?? -1);
 
-    public Stream OpenRead(ILocation location)
+    public Stream OpenRead(IPath path)
     {
-        var stream = assembly.GetManifestResourceStream(location.Path);
+        var stream = assembly.GetManifestResourceStream(path.Value);
         return stream is { CanRead: true }
             ? stream
             : throw new FileNotFoundException(
-                $"Resource `{location}` not found or can not be opened for reading.");
+                $"Resource `{path}` not found or can not be opened for reading.");
     }
 
-    public Stream OpenWrite(ILocation location)
+    public Stream OpenWrite(IPath path)
     {
-        var stream = assembly.GetManifestResourceStream(location.Path);
+        var stream = assembly.GetManifestResourceStream(path.Value);
         return stream is { CanWrite: true }
             ? stream
             : throw new FileNotFoundException(
-                $"Resource `{location}` not found or can not be opened for writing.");
+                $"Resource `{path}` not found or can not be opened for writing.");
     }
 
-    public Stream OpenReadWrite(ILocation location)
+    public Stream OpenReadWrite(IPath path)
     {
-        var stream = assembly.GetManifestResourceStream(location.Path);
+        var stream = assembly.GetManifestResourceStream(path.Value);
         return stream is { CanRead: true, CanWrite: true }
             ? stream
             : throw new FileNotFoundException(
-                $"Resource `{location}` not found or can not be opened for reading and writing.");
+                $"Resource `{path}` not found or can not be opened for reading and writing.");
     }
 
-    public Stream Open(ILocation location, FileAccess access)
+    public Stream Open(IPath path, FileAccess access)
     {
         return access switch
         {
-            FileAccess.Read => OpenRead(location),
-            FileAccess.Write => OpenWrite(location),
-            FileAccess.ReadWrite => OpenReadWrite(location),
+            FileAccess.Read => OpenRead(path),
+            FileAccess.Write => OpenWrite(path),
+            FileAccess.ReadWrite => OpenReadWrite(path),
             _ => throw new ArgumentOutOfRangeException(nameof(access), access, null)
         };
     }

@@ -24,45 +24,45 @@ namespace Stellar.Kernel.FileSystem.Provider
         /// <summary>
         /// Checks whether a file exists at the given location.
         /// </summary>
-        /// <param name="location">The file location to check.</param>
+        /// <param name="path">The file location to check.</param>
         /// <returns><c>true</c> if the file exists; otherwise, <c>false</c>.</returns>
-        bool Exists(ILocation location);
+        bool Exists(IPath path);
 
         /// <summary>
         /// Retrieves metadata information about the file at the specified location.
         /// </summary>
-        /// <param name="location">The file location.</param>
+        /// <param name="path">The file location.</param>
         /// <returns>An <see cref="IFileInfo"/> instance containing file metadata.</returns>
         /// <exception cref="FileNotFoundException">Thrown if the file does not exist.</exception>
-        IFileInfo GetFileInfo(ILocation location);
+        IFileInfo GetFileInfo(IPath path);
 
         /// <summary>
         /// Opens the file for read‑only access.
         /// </summary>
-        /// <param name="location">The file location.</param>
+        /// <param name="path">The file location.</param>
         /// <returns>A readable <see cref="Stream"/>.</returns>
-        Stream OpenRead(ILocation location);
+        Stream OpenRead(IPath path);
 
         /// <summary>
         /// Opens the file for write‑only access.
         /// </summary>
-        /// <param name="location">The file location.</param>
+        /// <param name="path">The file location.</param>
         /// <returns>A writable <see cref="Stream"/>.</returns>
-        Stream OpenWrite(ILocation location);
+        Stream OpenWrite(IPath path);
 
         /// <summary>
         /// Opens the file for both reading and writing.
         /// </summary>
-        /// <param name="location">The file location.</param>
+        /// <param name="path">The file location.</param>
         /// <returns>A readable and writable <see cref="Stream"/>.</returns>
-        Stream OpenReadWrite(ILocation location);
+        Stream OpenReadWrite(IPath path);
 
         /// <summary>
         /// Opens the file with the specified access mode.
         /// </summary>
-        /// <param name="location">The file location.</param>
+        /// <param name="path">The file location.</param>
         /// <param name="access">The desired <see cref="FileAccess"/> (Read, Write, or ReadWrite).</param>
         /// <returns>A <see cref="Stream"/> with the requested access.</returns>
-        Stream Open(ILocation location, FileAccess access);
+        Stream Open(IPath path, FileAccess access);
     }
 }

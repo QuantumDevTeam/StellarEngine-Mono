@@ -7,7 +7,7 @@ namespace Stellar.Kernel.FileSystem
     /// Represents an abstract quantum file stored at a quantum location.
     /// </summary>
     /// <remarks>
-    /// <para>A file is identified by its <see cref="Location"/> and has a <see cref="Type"/>
+    /// <para>A file is identified by its <see cref="Path"/> and has a <see cref="Type"/>
     /// (e.g., text, binary, image). Files are meta‑quants and can be compared for equality.</para>
     /// <para>This interface does not provide direct I/O; use <see cref="IFileStream"/> or file provider methods.</para>
     /// </remarks>
@@ -17,7 +17,7 @@ namespace Stellar.Kernel.FileSystem
         /// <summary>
         /// Gets the location of the file (domain + path).
         /// </summary>
-        ILocation Location { get; }
+        IPath Path { get; }
 
         /// <summary>
         /// Gets the file type descriptor.

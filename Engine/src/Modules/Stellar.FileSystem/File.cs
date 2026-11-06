@@ -7,16 +7,16 @@ namespace Stellar.FileSystem;
 /// <summary>
 /// Quantum File with a content
 /// </summary>
-/// <param name="location">File location</param>
+/// <param name="pathtion">File location</param>
 /// <param name="type">File type</param>
 /// <param name="identifier">An unique identifier</param>
-public class File(Location location, FileType type, IIdentifier? identifier = null)
+public class File(Path path, FileType type, IIdentifier? identifier = null)
     : MetaQuant(identifier), IFile
 {
     /// <summary>
     /// File location
     /// </summary>
-    public ILocation Location { get; } = location;
+    public IPath Path { get; } = path;
 
     /// <summary>
     /// File type
@@ -25,7 +25,7 @@ public class File(Location location, FileType type, IIdentifier? identifier = nu
 
     private bool Equals(File other)
     {
-        return other.Location == Location;
+        return other.Path == Path;
     }
 
     public bool Equals(IFile? obj)

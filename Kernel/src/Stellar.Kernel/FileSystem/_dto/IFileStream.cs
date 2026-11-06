@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using Stellar.Kernel.Quantization;
 
+// ReSharper disable once CheckNamespace
 namespace Stellar.Kernel.FileSystem
 {
     /// <summary>

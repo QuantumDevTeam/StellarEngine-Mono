@@ -1,5 +1,6 @@
 using Stellar.Kernel.Quantization;
 
+// ReSharper disable once CheckNamespace
 namespace Stellar.Kernel.Label
 {
     /// <summary>

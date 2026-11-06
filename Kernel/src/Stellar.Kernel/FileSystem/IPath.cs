@@ -7,13 +7,13 @@ namespace Stellar.Kernel.FileSystem
     /// Represents the address of a file within a specific domain.
     /// </summary>
     /// <remarks>
-    /// <para>A location combines a <see cref="IDomain"/> and a relative <see cref="Path"/> string.
+    /// <para>A location combines a <see cref="IDomain"/> and a relative <see cref="Value"/> string.
     /// It uniquely identifies a file in the quantum file system.</para>
     /// <para>Locations are meta‑quants and equatable. They can be created by combining a domain and a path,
     /// or by parsing a string representation (implementation‑specific).</para>
     /// </remarks>
-    public interface ILocation
-        : IMetaQuant, IEquatable<ILocation>
+    public interface IPath
+        : IMetaQuant, IEquatable<IPath>
     {
         /// <summary>
         /// Gets the domain that contains this location.
@@ -23,7 +23,7 @@ namespace Stellar.Kernel.FileSystem
         /// <summary>
         /// Gets the relative path of the file inside the domain.
         /// </summary>
-        string Path { get; }
+        string Value { get; }
 
         /// <summary>
         /// Returns the full location as a string (typically "domain://path" or similar).

@@ -10,8 +10,8 @@ namespace Stellar.FileSystem;
 /// <param name="domain">Location Domain (base)</param>
 /// <param name="path">path in Domain</param>
 /// <param name="identifier">An unique identifier</param>
-public sealed class Location(Domain domain, string path, IIdentifier? identifier = null)
-    : MetaQuant(identifier), ILocation
+public sealed class Path(Domain domain, string path, IIdentifier? identifier = null)
+    : MetaQuant(identifier), IPath
 {
     /// <summary>
     /// Domain of this Location
@@ -29,13 +29,13 @@ public sealed class Location(Domain domain, string path, IIdentifier? identifier
     /// <returns>String format `{Domain}://{Path}`</returns>
     public override string ToString() => $"{Domain}://{Path}";
 
-    private bool Equals(Location other)
+    private bool Equals(Path other)
     {
         return other.Domain == Domain && other.Path == Path;
     }
 
-    public bool Equals(ILocation? obj)
+    public bool Equals(IPath? obj)
     {
-        return ReferenceEquals(this, obj) || obj is Location other && Equals(other);
+        return ReferenceEquals(this, obj) || obj is Path other && Equals(other);
     }
 }
