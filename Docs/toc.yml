@@ -1,0 +1,61 @@
+# Navigation of the generated documentation site (DocFX). Paths are relative to this file.
+- name: Home
+  href: index.md
+- name: Overview
+  items:
+    - name: README
+      href: ../README.md
+    - name: Architecture
+      href: Architecture.md
+    - name: Design Philosophy
+      href: DesignPhilosophy.md
+- name: Architecture
+  items:
+    - name: Overview
+      href: Architecture/Overview.md
+    - name: Core
+      href: Architecture/Core.md
+    - name: Pipeline
+      href: Architecture/Pipeline.md
+    - name: Repository
+      href: Architecture/Repository.md
+    - name: Modules
+      href: Architecture/Modules.md
+    - name: SDK
+      href: Architecture/Sdk.md
+    - name: Runtime
+      href: Architecture/Runtime.md
+    - name: Tools
+      href: Architecture/Tools.md
+    - name: Native ABI
+      href: Architecture/NativeAbi.md
+- name: Formats
+  items:
+    - name: Project file
+      href: Formats/ProjectFile.md
+    - name: Module descriptor
+      href: Formats/ModuleDescriptor.md
+    - name: Engine manifest
+      href: Formats/EngineManifest.md
+    - name: Resource container
+      href: Formats/ResourceContainer.md
+- name: Reference
+  items:
+    - name: SDK properties and items
+      href: Reference/Sdk.Properties.md
+    - name: Diagnostics
+      href: Reference/Diagnostics.md
+- name: Project
+  items:
+    - name: Contributing
+      href: ../CONTRIBUTING.md
+    - name: Git policy
+      href: GitPolicy.md
+    - name: Versioning
+      href: Versioning.md
+    - name: Migrating to 0.8
+      href: Migration-0.8.md
+    - name: License
+      href: ../LICENSE.md
+    - name: CLA
+      href: ../CLA.md
