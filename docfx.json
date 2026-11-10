@@ -1,0 +1,40 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
+  "build": {
+    "content": [
+      {
+        "src": "Docs",
+        "files": [
+          "**/*.md",
+          "toc.yml"
+        ]
+      },
+      {
+        "files": [
+          "README.md",
+          "CONTRIBUTING.md",
+          "LICENSE.md",
+          "CLA.md"
+        ]
+      }
+    ],
+    "resource": [
+      {
+        "files": [
+          "Shared/Branding/Logo.png"
+        ]
+      }
+    ],
+    "output": "artifacts/docs/site",
+    "template": [
+      "default",
+      "modern"
+    ],
+    "globalMetadata": {
+      "_appName": "StellarEngine",
+      "_appTitle": "StellarEngine",
+      "_appFooter": "StellarEngine documentation",
+      "_enableSearch": true
+    }
+  }
+}

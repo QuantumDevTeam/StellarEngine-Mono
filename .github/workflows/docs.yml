@@ -1,0 +1,88 @@
+name: Docs
+
+# Builds the documentation site from Docs/ with DocFX (docfx.json) and publishes it to GitHub Pages.
+# Pull requests and manual runs on other branches only build; the site is deployed from master only.
+# Repository setting required once: Settings -> Pages -> Source = "GitHub Actions".
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'Docs/**'
+      - 'README.md'
+      - 'CONTRIBUTING.md'
+      - 'LICENSE.md'
+      - 'CLA.md'
+      - 'Shared/Branding/Logo.png'
+      - 'docfx.json'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    paths:
+      - 'Docs/**'
+      - 'README.md'
+      - 'CONTRIBUTING.md'
+      - 'LICENSE.md'
+      - 'CLA.md'
+      - 'Shared/Branding/Logo.png'
+      - 'docfx.json'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  DOCFX_VERSION: '2.81.0'
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+
+jobs:
+  build:
+    name: Build site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      # Installed outside the checkout so the repository NuGet.config (local "packages" feed) is not involved.
+      - name: Install DocFX
+        working-directory: ${{ runner.temp }}
+        run: dotnet tool install docfx --version "$DOCFX_VERSION" --tool-path "$RUNNER_TEMP/docfx"
+
+      - name: Build documentation
+        run: '"$RUNNER_TEMP/docfx/docfx" build docfx.json --warningsAsErrors'
+
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: artifacts/docs/site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    needs: build
+    runs-on: ubuntu-latest
+    # Never cancel a deployment that is already running.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v5
