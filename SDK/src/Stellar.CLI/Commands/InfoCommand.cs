@@ -1,20 +1,20 @@
 using Spectre.Console;
 using Spectre.Console.Cli;
-using Stellar.Tools;
+using Stellar.Tools.Environment;
 
-namespace Stellar.CLI.Commands;
+namespace Stellar.Cli.Commands;
 
-public sealed class InfoCommand : Command
+public sealed class InfoCommand
+    : Command
 {
     public override int Execute(CommandContext context)
     {
-        var table = new Table()
-            .AddColumn("Key")
-            .AddColumn("Value");
+        var home = StellarInstallation.TryLocate();
 
-        table.AddRow("Orchester version", StellarEnvironment.StellarOrchesterVersion);
-        table.AddRow("Engine shared path", StellarEnvironment.StellarOrchesterSharedDir);
-        table.AddRow("Engine installation path", StellarEnvironment.StellarOrchesterInstallationDir);
+        var table = new Table().AddColumn("Key").AddColumn("Value");
+        table.AddRow("Orchester version", StellarVersions.Orchester.EscapeMarkup());
+        table.AddRow("User directory", StellarInstallation.UserDirectory.EscapeMarkup());
+        table.AddRow("Installation", home?.Root.EscapeMarkup() ?? "[yellow]not found[/]");
 
         AnsiConsole.Write(table);
         return 0;

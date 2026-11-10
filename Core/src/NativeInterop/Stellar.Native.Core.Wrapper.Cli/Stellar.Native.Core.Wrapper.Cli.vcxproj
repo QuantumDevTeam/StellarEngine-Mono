@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <ItemGroup Label="ProjectConfigurations">
+        <ProjectConfiguration Include="Debug|x64">
+            <Configuration>Debug</Configuration>
+            <Platform>x64</Platform>
+        </ProjectConfiguration>
+        <ProjectConfiguration Include="Release|x64">
+            <Configuration>Release</Configuration>
+            <Platform>x64</Platform>
+        </ProjectConfiguration>
+    </ItemGroup>
+
+    <PropertyGroup Label="Globals">
+        <VCProjectVersion>18.0</VCProjectVersion>
+        <ProjectGuid>{9A816E53-E354-11F4-C6CC-FA831ED87F6B}</ProjectGuid>
+        <Keyword>NetCoreCProj</Keyword>
+        <RootNamespace>StellarNativeCoreWrapperCli</RootNamespace>
+        <TargetFramework>net9.0</TargetFramework>
+    </PropertyGroup>
+
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props"/>
+    <PropertyGroup Label="Configuration">
+        <!-- The Windows wrapper of the native core: C++/CLI over the C++ classes, with no flat layer in between -->
+        <ConfigurationType>DynamicLibrary</ConfigurationType>
+        <CLRSupport>NetCore</CLRSupport>
+    </PropertyGroup>
+    <Import Project="$(StellarRoot)Shared\Build\Stellar.Native.props"/>
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props"/>
+
+    <ItemDefinitionGroup>
+        <ClCompile>
+            <!-- Headers of this wrapper end with .cli.h: MSVC also searches the folders of the open includes, and a
+                 wrapper header named like a native one would shadow it. -->
+            <!-- /clr stops at C++20: this is why the public headers of the core are kept C++20 -->
+            <LanguageStandard>stdcpp20</LanguageStandard>
+            <PrecompiledHeader>NotUsing</PrecompiledHeader>
+            <WarningLevel>Level3</WarningLevel>
+            <SDLCheck>false</SDLCheck>
+            <ExceptionHandling>Async</ExceptionHandling>
+            <!-- 4679: C++/CLI cannot import the init-only setters of record structs, and never calls them -->
+            <DisableSpecificWarnings>4679;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+            <PreprocessorDefinitions>STELLAR_KERNEL_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+            <AdditionalIncludeDirectories>$(ProjectDir);$(StellarNativeCoreDir);$(StellarNativeKernelDir);$(StellarNativeKernelDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+        </ClCompile>
+    </ItemDefinitionGroup>
+
+    <ItemGroup>
+        <ClInclude Include="Wrapper\**\*.cli.h"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ClCompile Include="Wrapper\Identifier.cpp"/>
+        <ClCompile Include="Wrapper\Label.cpp"/>
+        <ClCompile Include="Wrapper\Data\Registry\IdentifierRegistry.cpp"/>
+        <ClCompile Include="Wrapper\Data\Registry\LabelRegistry.cpp"/>
+        <ClCompile Include="Wrapper\Data\Registry\ContainerRegistry.cpp"/>
+        <ClCompile Include="Wrapper\Modules\ModuleRegistry.cpp"/>
+        <ClCompile Include="Wrapper\Native\NativeCore.cpp"/>
+        <ClCompile Include="Wrapper\Native\CoreContext.cpp"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="$(StellarRoot)Core\src\Native\Stellar.Native.Core\Stellar.Native.Core.vcxproj">
+            <Project>{094D70EB-BA0B-45F7-86D8-F7E79660B578}</Project>
+        </ProjectReference>
+        <ProjectReference Include="$(StellarRoot)Kernel\src\Managed\Stellar.Kernel\Stellar.Kernel.csproj">
+            <SetPlatform>Platform=AnyCPU</SetPlatform>
+        </ProjectReference>
+    </ItemGroup>
+
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
+
+    <!-- The wrapper is useless without the core it wraps -->
+    <Target Name="CopyNativeCore" AfterTargets="Build">
+        <Copy SourceFiles="$(StellarNativeBinDir)Stellar.Native.Core\$(Configuration)\Stellar.Native.Core.dll" DestinationFolder="$(OutDir)"/>
+    </Target>
+</Project>

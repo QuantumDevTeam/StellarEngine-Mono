@@ -1,0 +1,13 @@
+<Project>
+    <!--
+        The wrapper of the native core. Engine code only names the classes (Stellar.Core.Identifier and the like),
+        and both wrappers provide the same ones:
+          Cli      C++/CLI over the C++ classes: the default on Windows
+          Managed  C# over the P/Invoke exports: everywhere else, and for Native AOT
+    -->
+    <PropertyGroup Condition="'$(StellarNativeWrapper)' == ''">
+        <StellarNativeWrapper Condition="$([MSBuild]::IsOSPlatform('Windows'))">Cli</StellarNativeWrapper>
+        <StellarNativeWrapper Condition="'$(StellarNativeWrapper)' == ''">Managed</StellarNativeWrapper>
+        <_StellarNativeWrapperDefaulted>true</_StellarNativeWrapperDefaulted>
+    </PropertyGroup>
+</Project>

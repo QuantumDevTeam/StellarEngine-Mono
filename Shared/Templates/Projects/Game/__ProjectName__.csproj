@@ -1,0 +1,5 @@
+<Project Sdk="Stellar.Sdk">
+    <PropertyGroup>
+        <StellarSdkUsage>ExecutableModule</StellarSdkUsage>
+    </PropertyGroup>
+</Project>

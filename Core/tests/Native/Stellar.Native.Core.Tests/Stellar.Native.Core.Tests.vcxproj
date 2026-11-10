@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <ItemGroup Label="ProjectConfigurations">
+        <ProjectConfiguration Include="Debug|x64">
+            <Configuration>Debug</Configuration>
+            <Platform>x64</Platform>
+        </ProjectConfiguration>
+        <ProjectConfiguration Include="Release|x64">
+            <Configuration>Release</Configuration>
+            <Platform>x64</Platform>
+        </ProjectConfiguration>
+    </ItemGroup>
+
+    <PropertyGroup Label="Globals">
+        <VCProjectVersion>18.0</VCProjectVersion>
+        <ProjectGuid>{DBF8ABFD-16F5-47D5-83DF-5CD13BCA7696}</ProjectGuid>
+        <Keyword>Win32Proj</Keyword>
+        <RootNamespace>StellarNativeCoreTests</RootNamespace>
+    </PropertyGroup>
+
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props"/>
+    <PropertyGroup Label="Configuration">
+        <ConfigurationType>Application</ConfigurationType>
+    </PropertyGroup>
+    <Import Project="$(StellarRoot)Shared\Build\Stellar.Native.props"/>
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props"/>
+
+    <ItemDefinitionGroup>
+        <ClCompile>
+            <PrecompiledHeader>NotUsing</PrecompiledHeader>
+            <PreprocessorDefinitions>STELLAR_KERNEL_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+            <AdditionalIncludeDirectories>$(StellarRoot)Core\src\NativeInterop\Stellar.Native.Core.Wrapper.PInvoke\;$(StellarNativeCoreDir);$(StellarNativeKernelDir);$(StellarNativeKernelDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+        </ClCompile>
+        <Link>
+            <SubSystem>Console</SubSystem>
+        </Link>
+    </ItemDefinitionGroup>
+
+    <ItemGroup>
+        <ClCompile Include="Tests.cpp"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="$(StellarRoot)Core\src\Native\Stellar.Native.Core\Stellar.Native.Core.vcxproj">
+            <Project>{094D70EB-BA0B-45F7-86D8-F7E79660B578}</Project>
+        </ProjectReference>
+        <ProjectReference Include="$(StellarRoot)Core\src\NativeInterop\Stellar.Native.Core.Wrapper.PInvoke\Stellar.Native.Core.Wrapper.PInvoke.vcxproj">
+            <Project>{3C7D2B91-6E4A-4F58-A1B2-8D9E0F1A2B3C}</Project>
+        </ProjectReference>
+        <ProjectReference Include="$(StellarRoot)Core\tests\Native\Stellar.Native.TestModule\Stellar.Native.TestModule.vcxproj">
+            <Project>{5B1C7F2E-3A44-4E0D-9C51-7D6E8A1F0B21}</Project>
+            <LinkLibraryDependencies>false</LinkLibraryDependencies>
+        </ProjectReference>
+    </ItemGroup>
+
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
+
+    <!-- The test executable and the libraries it loads must sit together -->
+    <Target Name="CopyNativeBinaries" AfterTargets="Build">
+        <Copy SourceFiles="$(StellarNativeBinDir)Stellar.Native.Core\$(Configuration)\Stellar.Native.Core.dll;$(StellarNativeBinDir)Stellar.Native.Core.Wrapper.PInvoke\$(Configuration)\Stellar.Native.Core.Wrapper.PInvoke.dll;$(StellarNativeBinDir)Stellar.Native.TestModule\$(Configuration)\Stellar.Native.TestModule.dll"
+              DestinationFolder="$(OutDir)"/>
+    </Target>
+</Project>

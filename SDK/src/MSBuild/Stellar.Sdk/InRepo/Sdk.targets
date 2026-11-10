@@ -1,0 +1,3 @@
+<Project>
+    <Import Project="$(StellarRoot)SDK/src/MSBuild/Stellar.Sdk/Sdk/Sdk.targets"/>
+</Project>

@@ -1,0 +1,39 @@
+<Project>
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Stellar.Sdk.InRepo.props'))"/>
+
+    <PropertyGroup>
+        <StellarSdkUsage>Tests</StellarSdkUsage>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+
+        <!-- The runtime starts before Stellar.Core: its tests use stand-ins (Fixtures/) instead -->
+        <StellarImplicitCoreReference>false</StellarImplicitCoreReference>
+        <StellarReferenceNativeWrapper>false</StellarReferenceNativeWrapper>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="$(StellarRoot)Runtime/src/Managed/Stellar.Runtime/Stellar.Runtime.csproj"/>
+    </ItemGroup>
+
+    <!--
+        The fixtures are loaded by the runtime from the output folder, never by the tests: they are built and copied,
+        not referenced.
+    -->
+    <ItemGroup>
+        <ProjectReference Include="$(StellarRoot)Runtime/tests/Fixtures/Stellar.Runtime.Tests.Application/Stellar.Runtime.Tests.Application.csproj"
+                          ReferenceOutputAssembly="false" Private="false"/>
+    </ItemGroup>
+
+    <Target Name="CopyRuntimeFixtures" AfterTargets="Build">
+        <MSBuild Projects="$(StellarRoot)Runtime/tests/Fixtures/Stellar.Runtime.Tests.Application/Stellar.Runtime.Tests.Application.csproj"
+                 Targets="GetTargetPath" Properties="Configuration=$(Configuration)">
+            <Output TaskParameter="TargetOutputs" ItemName="_FixtureAssembly"/>
+        </MSBuild>
+        <ItemGroup>
+            <_FixtureFile Include="%(_FixtureAssembly.RootDir)%(_FixtureAssembly.Directory)Stellar.Runtime.Tests.*"/>
+        </ItemGroup>
+        <Copy SourceFiles="@(_FixtureFile)" DestinationFolder="$(OutDir)fixtures/" SkipUnchangedFiles="true"/>
+    </Target>
+
+    <Import Project="$(StellarRoot)SDK/src/MSBuild/Stellar.Sdk/InRepo/Sdk.targets"/>
+</Project>

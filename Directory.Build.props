@@ -1,0 +1,18 @@
+<Project>
+    <!--
+        This directory is the root of an installation ($STELLAR_ROOT): modules/, projects/ and the rest live under it.
+        The settings of the core must not leak into them, so they apply only to the projects of the core itself.
+    -->
+    <PropertyGroup>
+        <StellarRoot Condition="'$(StellarRoot)' == ''">$(MSBuildThisFileDirectory)</StellarRoot>
+        <_StellarProjectDirectory>$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)').ToLowerInvariant())</_StellarProjectDirectory>
+        <_StellarRootDirectory>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)').ToLowerInvariant())</_StellarRootDirectory>
+        <!-- One line per folder of the core: a formatter has nothing to wrap, and a wrapped value would not be 'true' -->
+        <StellarIsCoreProject Condition="$(_StellarProjectDirectory.StartsWith('$(_StellarRootDirectory)kernel'))">true</StellarIsCoreProject>
+        <StellarIsCoreProject Condition="$(_StellarProjectDirectory.StartsWith('$(_StellarRootDirectory)core'))">true</StellarIsCoreProject>
+        <StellarIsCoreProject Condition="$(_StellarProjectDirectory.StartsWith('$(_StellarRootDirectory)runtime'))">true</StellarIsCoreProject>
+        <StellarIsCoreProject Condition="$(_StellarProjectDirectory.StartsWith('$(_StellarRootDirectory)sdk'))">true</StellarIsCoreProject>
+    </PropertyGroup>
+
+    <Import Project="Shared/Build/Stellar.Core.Build.props" Condition="'$(StellarIsCoreProject)' == 'true'"/>
+</Project>

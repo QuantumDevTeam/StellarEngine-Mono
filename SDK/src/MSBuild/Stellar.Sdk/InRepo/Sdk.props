@@ -1,0 +1,42 @@
+<Project>
+    <!--
+        Stellar.Sdk as the core itself consumes it: straight from the sources, no package.
+
+        Stellar.Core and the tests of the core are built through it, the same way a game or a module is. No task
+        assembly is needed for that: the tasks only run for projects with a .stellar.project file, and EngineCore
+        and Tests have none.
+
+            <Project>
+                <Import Project="$([MSBuild]::GetPathOfFileAbove('Stellar.Sdk.InRepo.props'))"/>
+                ...
+                <Import Project="$(StellarRoot)SDK/src/MSBuild/Stellar.Sdk/InRepo/Sdk.targets"/>
+            </Project>
+    -->
+    <PropertyGroup>
+        <StellarSdkInRepo>true</StellarSdkInRepo>
+        <StellarRoot Condition="'$(StellarRoot)' == ''">$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', '..', '..', '..', '..'))</StellarRoot>
+
+        <!-- The packages are made from the core, so it always builds from sources -->
+        <StellarPrecompiled>false</StellarPrecompiled>
+
+        <!-- The core is the same on every machine: the settings of an installation (config/) do not apply to it -->
+        <StellarImportCustomizations>false</StellarImportCustomizations>
+    </PropertyGroup>
+
+    <!--
+        Both wrappers build side by side: each is a variant of the project in the artifacts tree
+        (artifacts/bin/Stellar.Core-Cli, artifacts/bin/Stellar.Core-Managed). The name must be known before
+        Microsoft.NET.Sdk reads the output folders, so it is set here, before anything is imported.
+    -->
+    <Import Project="$(StellarRoot)SDK/src/MSBuild/Stellar.Sdk/Sdk/Stellar.Sdk.Wrapper.props"/>
+    <PropertyGroup>
+        <StellarArtifactsName>$(MSBuildProjectName)-$(StellarNativeWrapper)</StellarArtifactsName>
+    </PropertyGroup>
+
+    <Import Project="$(StellarRoot)SDK/src/MSBuild/Stellar.Sdk/Sdk/Sdk.props"/>
+
+    <!-- What older builds left next to a project is not a source -->
+    <PropertyGroup>
+        <DefaultItemExcludes>$(DefaultItemExcludes);bin/**;obj/**</DefaultItemExcludes>
+    </PropertyGroup>
+</Project>

@@ -1,0 +1,17 @@
+{
+  "$schema": "{{StellarSchemasUri}}stellar.project.schema.json",
+  "Project": {
+    "StellarEntryPoint": "default",
+    "Assets": {
+      "Include": ["Assets/**"],
+      "Exclude": [],
+      "Embedded": []
+    },
+    "Resources": {
+      "Include": ["Resources/**"]
+    }
+  },
+  "Runtime": {
+    "TargetFrameRate": 60
+  }
+}

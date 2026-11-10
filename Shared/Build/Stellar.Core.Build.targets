@@ -1,0 +1,13 @@
+<Project>
+    <!-- Bakes the component versions into every managed assembly of the core: tooling reads them instead of guessing -->
+    <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.csproj'">
+        <AssemblyMetadata Include="StellarOrchesterVersion" Value="$(StellarOrchesterVersion)"/>
+        <AssemblyMetadata Include="StellarKernelVersion" Value="$(StellarKernelVersion)"/>
+        <AssemblyMetadata Include="StellarCoreVersion" Value="$(StellarCoreVersion)"/>
+        <AssemblyMetadata Include="StellarToolsVersion" Value="$(StellarToolsVersion)"/>
+        <AssemblyMetadata Include="StellarSdkVersion" Value="$(StellarSdkVersion)"/>
+        <AssemblyMetadata Include="StellarCliVersion" Value="$(StellarCliVersion)"/>
+        <AssemblyMetadata Include="StellarEngineVersion" Value="$(StellarEngineVersion)"/>
+        <AssemblyMetadata Include="StellarNativeAbiVersion" Value="$(StellarNativeAbiVersion)"/>
+    </ItemGroup>
+</Project>

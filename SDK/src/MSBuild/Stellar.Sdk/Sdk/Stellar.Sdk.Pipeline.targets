@@ -1,0 +1,271 @@
+<Project>
+    <!--
+        The engine build steps. The tasks are thin adapters over Stellar.Tools.
+
+        Every step has a switch and a hook:
+
+          Step                                  Switch (=false)                          Runs after
+          StellarResolveProject                 -                                        $(StellarResolveProjectDependsOn)
+          StellarCompileResources               StellarEnableResourceCompilation         $(StellarCompileResourcesDependsOn)
+          StellarGenerateRuntimeConfiguration   StellarEnableRuntimeConfiguration        $(StellarGenerateRuntimeConfigurationDependsOn)
+          StellarGenerateLauncher               StellarEnableLauncher                    $(StellarGenerateLauncherDependsOn)
+
+        Assets of the .stellar.project are copied unless StellarEnableAssets=false. A step of your own goes in
+        config/Stellar.Sdk.targets of the installation, or in the project, with BeforeTargets/AfterTargets.
+
+        .stellar.project is required by games (ExecutableModule) only: a library without one simply has no assets,
+        resources and runtime configuration. StellarRequireProjectFile=true makes it required for any kind.
+    -->
+    <PropertyGroup>
+        <StellarTasksAssembly Condition="'$(StellarTasksAssembly)' == ''">$(MSBuildThisFileDirectory)tasks/Stellar.Sdk.Tasks.dll</StellarTasksAssembly>
+        <StellarResourcesOutputDir Condition="'$(StellarResourcesOutputDir)' == ''">$(IntermediateOutputPath)stellar/resources/</StellarResourcesOutputDir>
+        <_StellarRuntimeConfigName>$(StellarProjectName).stellar.runtime.config.json</_StellarRuntimeConfigName>
+        <_StellarRuntimeConfigFile>$(IntermediateOutputPath)stellar/$(_StellarRuntimeConfigName)</_StellarRuntimeConfigFile>
+        <_StellarRuntimeConfigResource>$(StellarProjectName):$(_StellarRuntimeConfigName)</_StellarRuntimeConfigResource>
+
+        <StellarRequireProjectFile Condition="'$(StellarRequireProjectFile)' == '' and '$(_StellarIsExecutable)' == 'true'">true</StellarRequireProjectFile>
+        <_StellarCanHaveProjectFile Condition="'$(_StellarIsTests)' != 'true' and '$(_StellarIsEngineCore)' != 'true' and '$(StellarSdkUsage)' != ''">true</_StellarCanHaveProjectFile>
+        <_StellarHasProjectFile Condition="'$(_StellarCanHaveProjectFile)' == 'true' and Exists('$(MSBuildProjectDirectory)/$(StellarProjectConfigurationFile)')">true</_StellarHasProjectFile>
+        <_StellarHasRuntimeConfiguration Condition="'$(_StellarHasProjectFile)' == 'true' and '$(StellarEnableRuntimeConfiguration)' != 'false'">true</_StellarHasRuntimeConfiguration>
+    </PropertyGroup>
+
+    <UsingTask TaskName="Stellar.Sdk.Tasks.ResolveStellarProject" AssemblyFile="$(StellarTasksAssembly)"/>
+    <UsingTask TaskName="Stellar.Sdk.Tasks.GenerateRuntimeConfiguration" AssemblyFile="$(StellarTasksAssembly)"/>
+    <UsingTask TaskName="Stellar.Sdk.Tasks.GenerateStellarLauncher" AssemblyFile="$(StellarTasksAssembly)"/>
+    <UsingTask TaskName="Stellar.Sdk.Tasks.GenerateLauncherDependencyFile" AssemblyFile="$(StellarTasksAssembly)"/>
+    <UsingTask TaskName="Stellar.Sdk.Tasks.CompileStellarResources" AssemblyFile="$(StellarTasksAssembly)"/>
+
+    <!-- A project that needs its configuration must have it -->
+    <Target Name="StellarValidateProject" BeforeTargets="PrepareForBuild">
+        <Error Code="STLRB004" Condition="'$(StellarRequireProjectFile)' == 'true' and '$(_StellarCanHaveProjectFile)' == 'true' and '$(_StellarHasProjectFile)' != 'true'"
+               Text="Project configuration not found: $(MSBuildProjectDirectory)/$(StellarProjectConfigurationFile). 'stellar project new' creates one."/>
+    </Target>
+
+    <!-- Parses .stellar.project: it decides what is compiled, copied and embedded -->
+    <Target Name="StellarResolveProject"
+            Condition="'$(_StellarHasProjectFile)' == 'true'"
+            DependsOnTargets="StellarValidateProject;$(StellarResolveProjectDependsOn)"
+            BeforeTargets="BeforeCompile;AssignTargetPaths">
+        <ResolveStellarProject ConfigurationFile="$(MSBuildProjectDirectory)/$(StellarProjectConfigurationFile)"
+                               AssemblyName="$(AssemblyName)">
+            <Output TaskParameter="EntryPoint" PropertyName="StellarEntryPoint"/>
+            <Output TaskParameter="ExternalAssets" ItemName="_StellarExternalAsset"/>
+            <Output TaskParameter="EmbeddedAssets" ItemName="_StellarEmbeddedAsset"/>
+            <Output TaskParameter="LocalizationFiles" ItemName="_StellarLocalizationFile"/>
+        </ResolveStellarProject>
+
+        <ItemGroup Condition="'$(StellarEnableAssets)' != 'false'">
+            <Content Include="@(_StellarExternalAsset)"/>
+            <EmbeddedResource Include="@(_StellarEmbeddedAsset)"/>
+        </ItemGroup>
+        <ItemGroup>
+            <Content Include="@(_StellarLocalizationFile)" Condition="'$(StellarLocalizationIndexType)' == 'External'"/>
+            <EmbeddedResource Include="@(_StellarLocalizationFile)" Condition="'$(StellarLocalizationIndexType)' == 'Embedded'"/>
+        </ItemGroup>
+    </Target>
+
+    <!-- Compiles resources into the engine format -->
+    <Target Name="StellarCompileResources"
+            Condition="'$(_StellarHasProjectFile)' == 'true' and '$(StellarEnableResourceCompilation)' != 'false' and '$(DesignTimeBuild)' != 'true'"
+            DependsOnTargets="StellarResolveProject;$(StellarCompileResourcesDependsOn)"
+            BeforeTargets="AssignTargetPaths">
+        <CompileStellarResources ConfigurationFile="$(MSBuildProjectDirectory)/$(StellarProjectConfigurationFile)"
+                                 OutputDirectory="$(StellarResourcesOutputDir)"
+                                 StellarRoot="$(StellarRoot)">
+            <Output TaskParameter="CompiledResources" ItemName="_StellarCompiledResource"/>
+        </CompileStellarResources>
+
+        <ItemGroup>
+            <Content Include="@(_StellarCompiledResource)"/>
+        </ItemGroup>
+    </Target>
+
+    <!--
+        The runtime configuration. The assembly says where it is (StellarRuntimeConfigType: a file next to it, or a
+        resource of its own), so the runtime needs nothing but the assembly to find it.
+    -->
+    <ItemGroup Condition="'$(_StellarHasRuntimeConfiguration)' == 'true'">
+        <AssemblyAttribute Include="Stellar.Kernel.Configuration.StellarRuntimeConfigurationAttribute">
+            <_Parameter1 Condition="'$(StellarRuntimeConfigType)' == 'Embedded'">$(_StellarRuntimeConfigResource)</_Parameter1>
+            <_Parameter1 Condition="'$(StellarRuntimeConfigType)' != 'Embedded'">$(_StellarRuntimeConfigName)</_Parameter1>
+            <_Parameter2>$(StellarRuntimeConfigType)</_Parameter2>
+        </AssemblyAttribute>
+    </ItemGroup>
+
+    <!-- Generates the runtime configuration, with the modules the application loads -->
+    <Target Name="StellarGenerateRuntimeConfiguration"
+            Condition="'$(_StellarHasRuntimeConfiguration)' == 'true' and '$(DesignTimeBuild)' != 'true'"
+            DependsOnTargets="StellarResolveProject;$(StellarGenerateRuntimeConfigurationDependsOn)"
+            BeforeTargets="AssignTargetPaths">
+        <GenerateRuntimeConfiguration ConfigurationFile="$(MSBuildProjectDirectory)/$(StellarProjectConfigurationFile)"
+                                      OutputFile="$(_StellarRuntimeConfigFile)"
+                                      AssemblyName="$(AssemblyName)"
+                                      CompanyName="$(CompanyName)"
+                                      Version="$(Version)"
+                                      OrchesterVersion="$(StellarOrchesterVersion)"
+                                      EngineVersion="$(StellarEngineVersion)"
+                                      Modules="@(StellarModuleInfo)"
+                                      Dependencies="@(StellarDependency)"/>
+
+        <ItemGroup>
+            <Content Include="$(_StellarRuntimeConfigFile)" Link="$(_StellarRuntimeConfigName)"
+                     CopyToOutputDirectory="PreserveNewest"
+                     Condition="'$(StellarRuntimeConfigType)' != 'Embedded'"/>
+            <EmbeddedResource Include="$(_StellarRuntimeConfigFile)" LogicalName="$(_StellarRuntimeConfigResource)"
+                              Condition="'$(StellarRuntimeConfigType)' == 'Embedded'"/>
+        </ItemGroup>
+    </Target>
+
+    <!--
+        The launcher of an executable module. The application is a library; next to it go
+
+            <name>.exe                        the apphost of .NET, with the icon and the manifest of the game
+            <name>.Launcher.dll               Main: Stellar.Runtime.Hosting.StellarRuntime.Run("<name>", args)
+            <name>.Launcher.deps.json         the launcher, the runtime and the Kernel: the default context
+            <name>.Launcher.runtimeconfig.json   the runtimeconfig of the application
+
+        StellarLauncherName and StellarLauncherAssemblyName rename the executable and the launcher.
+    -->
+    <PropertyGroup Condition="'$(_StellarIsExecutable)' == 'true'">
+        <StellarLauncherName Condition="'$(StellarLauncherName)' == ''">$(AssemblyName)</StellarLauncherName>
+        <StellarLauncherAssemblyName Condition="'$(StellarLauncherAssemblyName)' == ''">$(AssemblyName).Launcher</StellarLauncherAssemblyName>
+
+        <_StellarLauncherDir>$(IntermediateOutputPath)stellar/launcher/</_StellarLauncherDir>
+        <_StellarLauncherSource>$(_StellarLauncherDir)Stellar.Launcher.g.cs</_StellarLauncherSource>
+        <_StellarLauncherAssembly>$(_StellarLauncherDir)$(StellarLauncherAssemblyName).dll</_StellarLauncherAssembly>
+        <_StellarLauncherDependencyFile>$(_StellarLauncherDir)$(StellarLauncherAssemblyName).deps.json</_StellarLauncherDependencyFile>
+        <_StellarLauncherRuntimeConfig>$(_StellarLauncherDir)$(StellarLauncherAssemblyName).runtimeconfig.json</_StellarLauncherRuntimeConfig>
+        <_StellarLauncherExecutable>$(_StellarLauncherDir)$(StellarLauncherName)$(_NativeExecutableExtension)</_StellarLauncherExecutable>
+        <_StellarLauncherIcon Condition="Exists('$(MSBuildProjectDirectory)/$(StellarGameIcon)')">$(MSBuildProjectDirectory)/$(StellarGameIcon)</_StellarLauncherIcon>
+        <_StellarLauncherManifest Condition="Exists('$(MSBuildProjectDirectory)/$(StellarGameManifest)')">$(MSBuildProjectDirectory)/$(StellarGameManifest)</_StellarLauncherManifest>
+        <_StellarLauncherFileVersion>$(FileVersion)</_StellarLauncherFileVersion>
+        <_StellarLauncherFileVersion Condition="'$(_StellarLauncherFileVersion)' == ''">$(AssemblyVersion)</_StellarLauncherFileVersion>
+        <_StellarLauncherFileVersion Condition="'$(_StellarLauncherFileVersion)' == ''">$(Version)</_StellarLauncherFileVersion>
+    </PropertyGroup>
+
+    <!-- dotnet run and the IDE start the launcher -->
+    <PropertyGroup Condition="'$(_StellarIsExecutable)' == 'true' and '$(StellarEnableLauncher)' != 'false'">
+        <RunCommand>$(TargetDir)$(StellarLauncherName)$(_NativeExecutableExtension)</RunCommand>
+        <RunWorkingDirectory Condition="'$(RunWorkingDirectory)' == ''">$(TargetDir)</RunWorkingDirectory>
+    </PropertyGroup>
+
+    <Target Name="StellarGenerateLauncher"
+            Condition="'$(_StellarIsExecutable)' == 'true' and '$(StellarEnableLauncher)' != 'false' and '$(DesignTimeBuild)' != 'true'"
+            DependsOnTargets="$(StellarGenerateLauncherDependsOn);_StellarCompileLauncher;_StellarLauncherHostFiles;_StellarCreateLauncherExecutable"
+            AfterTargets="CopyFilesToOutputDirectory">
+        <ItemGroup>
+            <_StellarLauncherFile Include="$(_StellarLauncherAssembly);$(_StellarLauncherDependencyFile);$(_StellarLauncherRuntimeConfig);$(_StellarLauncherExecutable)"/>
+        </ItemGroup>
+
+        <Copy SourceFiles="@(_StellarLauncherFile)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true"
+              Retries="$(CopyRetryCount)" RetryDelayMilliseconds="$(CopyRetryDelayMilliseconds)">
+            <Output TaskParameter="CopiedFiles" ItemName="FileWrites"/>
+        </Copy>
+        <ItemGroup>
+            <FileWrites Include="@(_StellarLauncherFile->'$(OutDir)%(Filename)%(Extension)')"/>
+        </ItemGroup>
+    </Target>
+
+    <!-- The source of the launcher, rewritten only when it changes -->
+    <Target Name="_StellarLauncherSource" DependsOnTargets="ResolveAssemblyReferences">
+        <GenerateStellarLauncher Application="$(AssemblyName)"
+                                 OutputFile="$(_StellarLauncherSource)"
+                                 Title="$(StellarProjectName)"
+                                 Company="$(Company)"
+                                 Product="$(Product)"
+                                 Copyright="$(Copyright)"
+                                 FileVersion="$(_StellarLauncherFileVersion)"
+                                 InformationalVersion="$(Version)"/>
+
+        <ItemGroup>
+            <FileWrites Include="$(_StellarLauncherSource)"/>
+            <_StellarLauncherReference Include="@(ReferencePath)"/>
+        </ItemGroup>
+    </Target>
+
+    <!-- Compiled on its own: the launcher is not part of the application -->
+    <Target Name="_StellarCompileLauncher"
+            DependsOnTargets="_StellarLauncherSource"
+            Inputs="$(_StellarLauncherSource);@(_StellarLauncherReference);$(_StellarLauncherIcon);$(_StellarLauncherManifest);$(MSBuildAllProjects)"
+            Outputs="$(_StellarLauncherAssembly)">
+        <Csc Sources="$(_StellarLauncherSource)"
+             References="@(_StellarLauncherReference)"
+             OutputAssembly="$(_StellarLauncherAssembly)"
+             TargetType="exe"
+             Platform="$(PlatformTarget)"
+             LangVersion="latest"
+             Nullable="disable"
+             NoConfig="true"
+             NoLogo="true"
+             NoStandardLib="true"
+             DisableSdkPath="true"
+             Optimize="true"
+             Deterministic="true"
+             EmitDebugInformation="false"
+             DebugType="none"
+             Win32Icon="$(_StellarLauncherIcon)"
+             Win32Manifest="$(_StellarLauncherManifest)"
+             UseSharedCompilation="$(UseSharedCompilation)"
+             ToolExe="$(CscToolExe)"
+             ToolPath="$(CscToolPath)"/>
+
+        <ItemGroup>
+            <FileWrites Include="$(_StellarLauncherAssembly)"/>
+        </ItemGroup>
+    </Target>
+
+    <!-- What the host needs: the default context of the process, and the frameworks of the application -->
+    <Target Name="_StellarLauncherHostFiles" DependsOnTargets="_StellarLauncherSource;GenerateBuildRuntimeConfigurationFiles">
+        <ItemGroup>
+            <_StellarLauncherHostAssembly Include="@(ReferencePath)" Condition="'%(Filename)' == 'Stellar.Runtime' or '%(Filename)' == 'Stellar.Kernel'"/>
+        </ItemGroup>
+
+        <Error Code="STLRB005" Condition="'@(_StellarLauncherHostAssembly)' == ''"
+               Text="The launcher needs Stellar.Runtime, and the project does not reference it (StellarImplicitRuntimeReference=false?)."/>
+
+        <GenerateLauncherDependencyFile TargetFrameworkMoniker="$(TargetFrameworkMoniker)"
+                                        Launcher="$(StellarLauncherAssemblyName)"
+                                        LauncherVersion="$(Version)"
+                                        Assemblies="@(_StellarLauncherHostAssembly)"
+                                        OutputFile="$(_StellarLauncherDependencyFile)"/>
+
+        <Copy SourceFiles="$(ProjectRuntimeConfigFilePath)" DestinationFiles="$(_StellarLauncherRuntimeConfig)" SkipUnchangedFiles="true"/>
+
+        <ItemGroup>
+            <FileWrites Include="$(_StellarLauncherDependencyFile);$(_StellarLauncherRuntimeConfig)"/>
+        </ItemGroup>
+    </Target>
+
+    <!-- The apphost of .NET, pointed at the launcher. A console window in Debug, none otherwise (StellarOutputType) -->
+    <Target Name="_StellarCreateLauncherExecutable"
+            DependsOnTargets="_StellarCompileLauncher"
+            Inputs="$(_StellarLauncherAssembly);$(AppHostSourcePath)"
+            Outputs="$(_StellarLauncherExecutable)">
+        <Error Code="STLRB006" Condition="'$(AppHostSourcePath)' == '' or !Exists('$(AppHostSourcePath)')"
+               Text="The apphost of .NET for $(RuntimeIdentifier) was not found: the launcher of $(AssemblyName) cannot be created."/>
+
+        <CreateAppHost AppHostSourcePath="$(AppHostSourcePath)"
+                       AppHostDestinationPath="$(_StellarLauncherExecutable)"
+                       AppBinaryName="$(StellarLauncherAssemblyName).dll"
+                       IntermediateAssembly="$([System.IO.Path]::GetFullPath('$(_StellarLauncherAssembly)'))"
+                       WindowsGraphicalUserInterface="$([MSBuild]::ValueOrDefault('$(StellarOutputType)', '').Equals('WinExe'))"
+                       Retries="$(CopyRetryCount)"
+                       RetryDelayMilliseconds="$(CopyRetryDelayMilliseconds)"/>
+
+        <ItemGroup>
+            <FileWrites Include="$(_StellarLauncherExecutable)"/>
+        </ItemGroup>
+    </Target>
+
+    <!-- dotnet publish takes the launcher too -->
+    <Target Name="_StellarPublishLauncher"
+            Condition="'$(_StellarIsExecutable)' == 'true' and '$(StellarEnableLauncher)' != 'false'"
+            AfterTargets="ComputeResolvedFilesToPublishList">
+        <ItemGroup>
+            <ResolvedFileToPublish Include="$(_StellarLauncherAssembly);$(_StellarLauncherDependencyFile);$(_StellarLauncherRuntimeConfig);$(_StellarLauncherExecutable)">
+                <RelativePath>%(Filename)%(Extension)</RelativePath>
+                <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+            </ResolvedFileToPublish>
+        </ItemGroup>
+    </Target>
+</Project>

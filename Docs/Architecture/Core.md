@@ -36,13 +36,17 @@ but rely on collaboration in Run-time
 
 ---
 
-### Level 3 — Stellar.RuntimeSystem Module
+### Level 3 — Stellar.Runtime
 
 Creating the foundation for the engine core to work
 
 - Loading modules
 - Initialization and de-initialization
 - Start and stop control
+- The main loop
+
+It is part of this repository (`Runtime/`) and the exception to the order of the levels: it depends on the Kernel
+only and starts first, then loads Stellar.Core and every other module. See [Runtime](Runtime.md).
 
 ---
 

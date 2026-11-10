@@ -1,0 +1,18 @@
+<Project>
+    <!--
+        Created by 'stellar install', and never overwritten afterwards: the native toolchain of this installation.
+
+        Imported at the end of Shared/Build/Stellar.Native.props, so it applies to every native project, of the core
+        and of the modules, and wins over the defaults there.
+
+        Examples:
+            <PropertyGroup>
+                <PlatformToolset>v145</PlatformToolset>
+            </PropertyGroup>
+            <ItemDefinitionGroup>
+                <ClCompile>
+                    <TreatWarningAsError>true</TreatWarningAsError>
+                </ClCompile>
+            </ItemDefinitionGroup>
+    -->
+</Project>

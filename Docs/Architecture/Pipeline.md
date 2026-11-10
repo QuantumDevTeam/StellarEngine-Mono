@@ -12,7 +12,7 @@ flowchart LR
     Modules --> Natives --> Native.Kernel
     Modules --> SDK
     
-    ExecutableModule --> GeneratedLauncher --> Stellar.RuntimeSystem --> StellarModules
+    ExecutableModule --> GeneratedLauncher --> Stellar.Runtime --> StellarModules
 ```
 
 ## Runtime lifecycle

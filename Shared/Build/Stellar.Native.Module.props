@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Makes a native project a consumer of the native core: the headers of Kernel and Core, the import library of
+    Stellar.Native.Core, and the DLL next to the output. Import it after Stellar.Native.props.
+
+    The core is linked as built (scripts/build.ps1), not as a project: a module does not rebuild the engine.
+    Set StellarNativeLinkCore=false for a module that only needs the headers of the Kernel (a plain C ABI module).
+-->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <StellarNativeLinkCore Condition="'$(StellarNativeLinkCore)' == ''">true</StellarNativeLinkCore>
+        <StellarNativeCoreBinaries>$(StellarNativeBinDir)Stellar.Native.Core\$(Configuration)\</StellarNativeCoreBinaries>
+        <StellarNativeKernelBinaries>$(StellarNativeBinDir)Stellar.Native.Kernel\$(Configuration)\</StellarNativeKernelBinaries>
+    </PropertyGroup>
+
+    <ItemDefinitionGroup>
+        <ClCompile>
+            <PreprocessorDefinitions>STELLAR_KERNEL_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+            <AdditionalIncludeDirectories>$(StellarNativeKernelDir);$(StellarNativeKernelDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+        </ClCompile>
+    </ItemDefinitionGroup>
+
+    <ItemDefinitionGroup Condition="'$(StellarNativeLinkCore)' == 'true'">
+        <ClCompile>
+            <AdditionalIncludeDirectories>$(StellarNativeCoreDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+        </ClCompile>
+        <Link>
+            <AdditionalLibraryDirectories>$(StellarNativeCoreBinaries);$(StellarNativeKernelBinaries);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+            <AdditionalDependencies>Stellar.Native.Core.lib;Stellar.Native.Kernel.lib;%(AdditionalDependencies)</AdditionalDependencies>
+        </Link>
+    </ItemDefinitionGroup>
+
+    <Target Name="StellarCheckNativeCore" BeforeTargets="ClCompile" Condition="'$(StellarNativeLinkCore)' == 'true'">
+        <Error Condition="!Exists('$(StellarNativeCoreBinaries)Stellar.Native.Core.lib')"
+               Text="The native core is not built for $(Configuration): $(StellarNativeCoreBinaries). Run scripts/build.ps1 -Configuration $(Configuration) in $(StellarRoot)."/>
+    </Target>
+
+    <Target Name="StellarCopyNativeCore" AfterTargets="Build" Condition="'$(StellarNativeLinkCore)' == 'true'">
+        <Copy SourceFiles="$(StellarNativeCoreBinaries)Stellar.Native.Core.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true"/>
+    </Target>
+</Project>

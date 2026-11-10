@@ -1,0 +1,35 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <!--
+        Evaluated AFTER the project body. Order matters: what a file derives must exist before the next one reads it,
+        and the settings Microsoft.NET.Sdk reads must land before its targets.
+
+          Catalog     who the project is, and which modules exist
+          Module      what a module project gets from its descriptor: kind, version, dependencies
+          Usage       settings per kind of project
+          References  StellarDependency items become project or package references
+          Native      the wrapper of the native core, native libraries of modules
+          Analysis    the analyzers and what they read
+          Metadata    what the assembly says about itself
+          Validation  mistakes worth stopping the build for
+          Pipeline    the engine build steps
+    -->
+    <Import Project="Stellar.Sdk.Catalog.targets"/>
+    <Import Project="Stellar.Sdk.Module.targets"/>
+    <Import Project="Stellar.Sdk.Usage.targets"/>
+    <Import Project="Stellar.Sdk.References.targets"/>
+    <Import Project="Stellar.Sdk.Native.targets"/>
+    <Import Project="Stellar.Sdk.Analysis.targets"/>
+    <Import Project="Stellar.Sdk.Metadata.targets"/>
+    <Import Project="Stellar.Sdk.Validation.targets"/>
+
+    <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk"/>
+
+    <Import Project="Stellar.Sdk.Pipeline.targets"/>
+
+    <!-- The build steps of the installation, after everything else -->
+    <PropertyGroup Condition="'$(StellarImportCustomizations)' != 'false'">
+        <StellarCustomAfterSdkTargets Condition="'$(StellarCustomAfterSdkTargets)' == '' and '$(StellarRoot)' != ''">$(StellarRoot)config/Stellar.Sdk.targets</StellarCustomAfterSdkTargets>
+    </PropertyGroup>
+    <Import Project="$(StellarCustomAfterSdkTargets)"
+            Condition="'$(StellarImportCustomizations)' != 'false' and '$(StellarCustomAfterSdkTargets)' != '' and Exists('$(StellarCustomAfterSdkTargets)')"/>
+</Project>

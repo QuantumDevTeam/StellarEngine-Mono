@@ -1,0 +1,22 @@
+{
+  "solution": {
+    "path": "StellarEngine-Core.sln",
+    "projects": [
+      "Core\\src\\Managed\\Stellar.Core\\Stellar.Core.csproj",
+      "Core\\src\\NativeInterop\\Stellar.Native.Core.Wrapper.Managed\\Stellar.Native.Core.Wrapper.Managed.csproj",
+      "Core\\tests\\Managed\\Stellar.Core.Tests\\Stellar.Core.Tests.csproj",
+      "Kernel\\src\\Managed\\Stellar.Kernel\\Stellar.Kernel.csproj",
+      "Runtime\\src\\Managed\\Stellar.Runtime\\Stellar.Runtime.csproj",
+      "Runtime\\tests\\Fixtures\\Stellar.Runtime.Tests.Application\\Stellar.Runtime.Tests.Application.csproj",
+      "Runtime\\tests\\Fixtures\\Stellar.Runtime.Tests.Host\\Stellar.Runtime.Tests.Host.csproj",
+      "Runtime\\tests\\Stellar.Runtime.Tests\\Stellar.Runtime.Tests.csproj",
+      "SDK\\src\\MSBuild\\Stellar.Sdk.Tasks\\Stellar.Sdk.Tasks.csproj",
+      "SDK\\src\\MSBuild\\Stellar.Sdk\\Stellar.Sdk.csproj",
+      "SDK\\src\\Roslyn\\Stellar.Sdk.Analyzers\\Stellar.Sdk.Analyzers.csproj",
+      "SDK\\src\\Stellar.Cli\\Stellar.Cli.csproj",
+      "SDK\\src\\Stellar.Tools\\Stellar.Tools.csproj",
+      "SDK\\tests\\Stellar.Sdk.Analyzers.Tests\\Stellar.Sdk.Analyzers.Tests.csproj",
+      "SDK\\tests\\Stellar.Tools.Tests\\Stellar.Tools.Tests.csproj"
+    ]
+  }
+}

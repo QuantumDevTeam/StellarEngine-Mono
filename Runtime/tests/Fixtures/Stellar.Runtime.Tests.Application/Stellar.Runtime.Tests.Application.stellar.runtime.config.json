@@ -1,0 +1,29 @@
+{
+    "SchemaVersion": 2,
+    "ProjectName": "Stellar.Runtime.Tests.Application",
+    "Version": "1.0.0",
+    "EntryPoint": "Stellar.Runtime.Tests.Application.Game",
+    "Settings": {
+        "TargetFrameRate": "0"
+    },
+    "Components": [
+        {
+            "Kind": "Modules",
+            "Modules": [
+                {
+                    "Id": "Stellar.Kernel",
+                    "Level": "Kernel",
+                    "Version": "0.7.0"
+                },
+                {
+                    "Id": "Stellar.Runtime.Tests.Host",
+                    "Level": "Core",
+                    "Version": "1.0.0",
+                    "Dependencies": [
+                        "Stellar.Kernel"
+                    ]
+                }
+            ]
+        }
+    ]
+}

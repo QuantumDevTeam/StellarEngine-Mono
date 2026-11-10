@@ -1,0 +1,9 @@
+{
+    "SchemaVersion": 2,
+    "ProjectName": "Host",
+    "Version": "1.0.0",
+    "Settings": {
+        "MaxFrames": "7"
+    },
+    "Components": []
+}

@@ -1,0 +1,20 @@
+<Project>
+    <!--
+        The door into Stellar.Sdk for the projects of the core that build through it from the sources (Stellar.Core,
+        the tests). Such a project has no Sdk attribute and nothing is imported before its first line, so it finds this
+        file by name, from wherever it is:
+
+            <Project>
+                <Import Project="$([MSBuild]::GetPathOfFileAbove('Stellar.Sdk.InRepo.props'))"/>
+                ...
+                <Import Project="$(StellarRoot)SDK/src/MSBuild/Stellar.Sdk/InRepo/Sdk.targets"/>
+            </Project>
+
+        From here on everything is $(StellarRoot).
+    -->
+    <PropertyGroup>
+        <StellarRoot Condition="'$(StellarRoot)' == ''">$(MSBuildThisFileDirectory)</StellarRoot>
+    </PropertyGroup>
+
+    <Import Project="$(StellarRoot)SDK/src/MSBuild/Stellar.Sdk/InRepo/Sdk.props"/>
+</Project>

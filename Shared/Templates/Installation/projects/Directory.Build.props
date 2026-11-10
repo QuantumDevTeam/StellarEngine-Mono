@@ -1,0 +1,12 @@
+<Project>
+    <!--
+        Created by 'stellar install', and never overwritten afterwards: edit it freely.
+
+        MSBuild looks for Directory.Build.props from a project upwards and stops at the first one. This file is that
+        first one for every project of projects/, so the build files of the core above never apply to a game.
+        A project with its own Directory.Build.props stops even earlier, and is on its own.
+    -->
+    <PropertyGroup>
+        <StellarRoot Condition="'$(StellarRoot)' == ''">$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)..'))</StellarRoot>
+    </PropertyGroup>
+</Project>

@@ -147,5 +147,5 @@ Each contributor:
 
 Also see:
 - [Versioning.md](Versioning.md)
-- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [CONTRIBUTING.md](../CONTRIBUTING.md)
 - [README.md](./../README.md)

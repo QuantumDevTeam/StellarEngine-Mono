@@ -1,0 +1,22 @@
+<Project>
+    <!--
+        Defaults that the installation (config/Stellar.Sdk.props) and the project may replace.
+
+        How modules are referenced:
+          StellarPrecompiled=false  sources, through ProjectReference: the default of Debug
+          StellarPrecompiled=true   the local NuGet feed, through PackageReference: the default of everything else
+        A module may be pinned to one of the two by the manifest ("Link"), whatever this says.
+    -->
+    <PropertyGroup Condition="'$(StellarPrecompiled)' == ''">
+        <StellarPrecompiled Condition="'$(Configuration)' == 'Debug' or '$(Configuration)' == ''">false</StellarPrecompiled>
+        <StellarPrecompiled Condition="'$(StellarPrecompiled)' == ''">true</StellarPrecompiled>
+    </PropertyGroup>
+
+    <!-- The wrapper of the native core. The in-repo SDK has chosen it already, to split the output folders -->
+    <Import Project="Stellar.Sdk.Wrapper.props" Condition="'$(StellarNativeWrapper)' == ''"/>
+
+    <!-- The local feed is added to the project, no user-wide NuGet configuration is needed -->
+    <PropertyGroup Condition="'$(StellarPackagesDir)' != '' and '$(StellarUseLocalFeed)' != 'false'">
+        <RestoreAdditionalProjectSources>$(RestoreAdditionalProjectSources);$(StellarPackagesDir)</RestoreAdditionalProjectSources>
+    </PropertyGroup>
+</Project>

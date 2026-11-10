@@ -1,0 +1,6 @@
+<Project>
+    <!--
+        Created by 'stellar install'. Stops NuGet from taking the central package versions of the core: a project
+        lists its own versions, or brings its own Directory.Packages.props.
+    -->
+</Project>

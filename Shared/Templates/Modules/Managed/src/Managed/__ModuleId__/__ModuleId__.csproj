@@ -1,0 +1,7 @@
+<Project Sdk="Stellar.Sdk">
+    <!--
+        A module project needs nothing else: Stellar.Sdk takes the kind of project, the version, the description and
+        the dependencies from {{ModuleId}}.stellar.module, and references Stellar.Kernel and Stellar.Core.
+        Anything set here wins over it. Every property: Docs/Reference/Sdk.Properties.md of the installation.
+    -->
+</Project>

@@ -1,0 +1,83 @@
+<Project>
+    <!--
+        StellarSdkUsage says what a project is. A module project gets it from its level (Stellar.Sdk.Module.targets).
+
+          Tests             a test project
+          ExecutableModule  a game or an application: gets a generated launcher
+          Module            a custom module, a library for executable modules (level 5)
+          EngineModule      an engine module (levels 3 and 4), built on Stellar.Core
+          EngineCoreModule  a core system (level 2): depends on Stellar.Core and the Kernel only
+          EngineCore        Stellar.Core itself: depends on the Kernel and the native wrapper only
+    -->
+    <PropertyGroup>
+        <StellarProjectName Condition="'$(StellarProjectName)' == ''">$(AssemblyName)</StellarProjectName>
+        <StellarProjectName Condition="'$(StellarProjectName)' == ''">$(MSBuildProjectName)</StellarProjectName>
+        <CompanyName Condition="'$(CompanyName)' == ''">Unknown</CompanyName>
+
+        <StellarProjectConfigurationFile Condition="'$(StellarProjectConfigurationFile)' == ''">$(StellarProjectName).stellar.project</StellarProjectConfigurationFile>
+        <StellarRuntimeConfigType Condition="'$(StellarRuntimeConfigType)' == ''">External</StellarRuntimeConfigType>
+        <StellarLocalizationIndexType Condition="'$(StellarLocalizationIndexType)' == ''">External</StellarLocalizationIndexType>
+
+        <_StellarIsTests Condition="'$(StellarSdkUsage)' == 'Tests'">true</_StellarIsTests>
+        <_StellarIsExecutable Condition="'$(StellarSdkUsage)' == 'ExecutableModule'">true</_StellarIsExecutable>
+        <_StellarIsEngineModule Condition="'$(StellarSdkUsage)' == 'EngineModule' or '$(StellarSdkUsage)' == 'EngineCoreModule'">true</_StellarIsEngineModule>
+        <_StellarIsEngineCore Condition="'$(StellarSdkUsage)' == 'EngineCore'">true</_StellarIsEngineCore>
+    </PropertyGroup>
+
+    <!-- Tests: the frameworks can be switched off (StellarTestFrameworks=false) to bring others -->
+    <PropertyGroup Condition="'$(_StellarIsTests)' == 'true'">
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+    </PropertyGroup>
+    <ItemGroup Condition="'$(_StellarIsTests)' == 'true' and '$(StellarTestFrameworks)' != 'false'">
+        <PackageReference Include="Microsoft.NET.Test.Sdk"/>
+        <PackageReference Include="xunit"/>
+        <PackageReference Include="xunit.runner.visualstudio"/>
+        <PackageReference Include="FluentAssertions"/>
+        <Using Include="Xunit"/>
+        <Using Include="FluentAssertions"/>
+    </ItemGroup>
+    <!-- Versions, unless central package management (the core uses it) provides them -->
+    <ItemGroup Condition="'$(_StellarIsTests)' == 'true' and '$(StellarTestFrameworks)' != 'false' and '$(ManagePackageVersionsCentrally)' != 'true'">
+        <PackageReference Update="Microsoft.NET.Test.Sdk" Version="17.12.0"/>
+        <PackageReference Update="xunit" Version="2.9.2"/>
+        <PackageReference Update="xunit.runner.visualstudio" Version="2.8.2"/>
+        <PackageReference Update="FluentAssertions" Version="6.12.0"/>
+    </ItemGroup>
+
+    <!--
+        Executable modules. An application is a module like any other: a library, loaded by the runtime. What
+        starts it is a launcher the SDK generates next to it (Stellar.Sdk.Pipeline.targets): <name>.exe and
+        <name>.Launcher.dll, which hands the name of the application to Stellar.Runtime.
+
+        The library carries everything the runtime needs to load it: its .deps.json, its dependencies copied next to
+        it, its runtimeconfig (which the launcher takes). The apphost of .NET is resolved for the launcher.
+
+        A console window is for debugging only: StellarOutputType is Exe in Debug, WinExe otherwise.
+    -->
+    <PropertyGroup Condition="'$(_StellarIsExecutable)' == 'true'">
+        <StellarOutputType Condition="'$(StellarOutputType)' == '' and '$(Configuration)' == 'Debug'">Exe</StellarOutputType>
+        <StellarOutputType Condition="'$(StellarOutputType)' == ''">WinExe</StellarOutputType>
+        <OutputType>Library</OutputType>
+        <EnableDynamicLoading>true</EnableDynamicLoading>
+        <UseAppHost Condition="'$(StellarEnableLauncher)' != 'false'">true</UseAppHost>
+
+        <StellarGameIcon Condition="'$(StellarGameIcon)' == ''">$(StellarProjectName).ico</StellarGameIcon>
+        <StellarGameManifest Condition="'$(StellarGameManifest)' == ''">$(StellarProjectName).manifest</StellarGameManifest>
+    </PropertyGroup>
+
+    <!-- Engine modules, and the core itself -->
+    <PropertyGroup Condition="'$(_StellarIsEngineModule)' == 'true' or '$(_StellarIsEngineCore)' == 'true'">
+        <CompanyName>QuantumDevTeam</CompanyName>
+        <Version Condition="'$(Version)' == ''">$(StellarEngineVersion)</Version>
+        <AssemblyVersion Condition="'$(AssemblyVersion)' == ''">$(Version)</AssemblyVersion>
+        <GenerateDocumentationFile Condition="'$(GenerateDocumentationFile)' == ''">true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <!-- Package information -->
+    <PropertyGroup Condition="'$(IsPackable)' != 'false'">
+        <Authors Condition="'$(Authors)' == ''">$(CompanyName)</Authors>
+        <PackageId Condition="'$(PackageId)' == ''">$(StellarProjectName)</PackageId>
+        <Description Condition="'$(Description)' == ''">$(ModuleDescription)</Description>
+    </PropertyGroup>
+</Project>

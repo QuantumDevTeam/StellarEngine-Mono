@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <!--
+        The portable wrapper of the native core: classes over the P/Invoke exports of
+        Stellar.Native.Core.Wrapper.PInvoke. Stellar.Native.Core.Wrapper.Cli exposes exactly the same classes over
+        the C++ classes, and the SDK picks one of the two. Code never names a wrapper, only the classes.
+    -->
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <RootNamespace>Stellar.Core</RootNamespace>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+        <Version>$(StellarCoreVersion)</Version>
+        <AssemblyVersion>$(Version)</AssemblyVersion>
+
+        <IsPackable>false</IsPackable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="$(StellarRoot)Kernel/src/Managed/Stellar.Kernel/Stellar.Kernel.csproj"/>
+    </ItemGroup>
+
+    <!-- The native libraries travel with the wrapper, when they have been built -->
+    <PropertyGroup>
+        <_StellarNativeDir>$(StellarArtifactsBinDir)</_StellarNativeDir>
+    </PropertyGroup>
+    <ItemGroup>
+        <None Include="$(_StellarNativeDir)Stellar.Native.Core/$(Configuration)/Stellar.Native.Core.dll"
+              Condition="Exists('$(_StellarNativeDir)Stellar.Native.Core/$(Configuration)/Stellar.Native.Core.dll')"
+              Link="Stellar.Native.Core.dll" CopyToOutputDirectory="PreserveNewest" Visible="false"/>
+        <None Include="$(_StellarNativeDir)Stellar.Native.Core.Wrapper.PInvoke/$(Configuration)/Stellar.Native.Core.Wrapper.PInvoke.dll"
+              Condition="Exists('$(_StellarNativeDir)Stellar.Native.Core.Wrapper.PInvoke/$(Configuration)/Stellar.Native.Core.Wrapper.PInvoke.dll')"
+              Link="Stellar.Native.Core.Wrapper.PInvoke.dll" CopyToOutputDirectory="PreserveNewest" Visible="false"/>
+    </ItemGroup>
+</Project>

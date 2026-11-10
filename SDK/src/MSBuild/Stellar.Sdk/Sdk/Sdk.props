@@ -1,0 +1,51 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <!--
+        Evaluated BEFORE the project body: $(StellarSdkUsage) and other project settings do not exist yet.
+        Everything that depends on them lives in the .targets files. Every value here is a default the project, or
+        config/Stellar.Sdk.props of the installation, may replace.
+
+        The installation, its settings and the output folders come before Microsoft.NET.Sdk: it fixes where obj/
+        is as soon as it is imported.
+    -->
+
+    <!-- Where the installation is -->
+    <Import Project="Stellar.Sdk.Environment.props"/>
+
+    <!-- The settings of the installation, before any default of the SDK -->
+    <PropertyGroup Condition="'$(StellarImportCustomizations)' != 'false'">
+        <StellarCustomBeforeSdkProps Condition="'$(StellarCustomBeforeSdkProps)' == '' and '$(StellarRoot)' != ''">$(StellarRoot)config/Stellar.Sdk.props</StellarCustomBeforeSdkProps>
+    </PropertyGroup>
+    <Import Project="$(StellarCustomBeforeSdkProps)"
+            Condition="'$(StellarImportCustomizations)' != 'false' and '$(StellarCustomBeforeSdkProps)' != '' and Exists('$(StellarCustomBeforeSdkProps)')"/>
+
+    <!-- How modules are linked, which wrapper of the native core -->
+    <Import Project="Stellar.Sdk.Defaults.props"/>
+
+    <!-- Everything built goes to artifacts/ of the installation. Inside the core, Directory.Build.props does it -->
+    <Import Project="Stellar.Artifacts.props" Condition="'$(_StellarArtifactsImported)' != 'true' and Exists('$(MSBuildThisFileDirectory)Stellar.Artifacts.props')"/>
+
+    <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk"/>
+
+    <!-- The layout of games and modules. Projects of the core itself keep the plain .NET layout -->
+    <PropertyGroup Condition="'$(StellarSdkInRepo)' != 'true'">
+        <WinSdkVersion Condition="'$(WinSdkVersion)' == ''">10.0.26100.0</WinSdkVersion>
+        <TargetFramework Condition="'$(TargetFramework)' == '' and '$(TargetFrameworks)' == ''">net9.0-windows$(WinSdkVersion)</TargetFramework>
+
+        <PlatformTarget Condition="'$(PlatformTarget)' == ''">x64</PlatformTarget>
+        <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
+        <SelfContained Condition="'$(SelfContained)' == ''">false</SelfContained>
+
+        <Configurations Condition="'$(Configurations)' == ''">Debug;Release</Configurations>
+        <Platforms Condition="'$(Platforms)' == ''">x64</Platforms>
+
+        <!-- artifacts/bin/<project>/<configuration>/, nothing below: a game is one folder you can ship -->
+        <AppendTargetFrameworkToOutputPath Condition="'$(AppendTargetFrameworkToOutputPath)' == ''">false</AppendTargetFrameworkToOutputPath>
+        <AppendRuntimeIdentifierToOutputPath Condition="'$(AppendRuntimeIdentifierToOutputPath)' == ''">false</AppendRuntimeIdentifierToOutputPath>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <ImplicitUsings Condition="'$(ImplicitUsings)' == ''">enable</ImplicitUsings>
+        <Nullable Condition="'$(Nullable)' == ''">enable</Nullable>
+        <AllowUnsafeBlocks Condition="'$(AllowUnsafeBlocks)' == ''">true</AllowUnsafeBlocks>
+    </PropertyGroup>
+</Project>

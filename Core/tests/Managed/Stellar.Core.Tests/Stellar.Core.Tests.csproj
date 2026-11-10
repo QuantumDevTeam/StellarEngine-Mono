@@ -1,0 +1,24 @@
+<Project>
+    <!--
+        Built through Stellar.Sdk like any other test project: the SDK adds Stellar.Kernel, Stellar.Core, the
+        wrapper of the native core and the test frameworks. Run it once per wrapper:
+            dotnet test -p:StellarNativeWrapper=Cli
+            dotnet test -p:StellarNativeWrapper=Managed
+    -->
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Stellar.Sdk.InRepo.props'))"/>
+
+    <PropertyGroup>
+        <StellarSdkUsage>Tests</StellarSdkUsage>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <!-- The parity test reads both wrappers as metadata -->
+    <ItemGroup>
+        <PackageReference Include="System.Reflection.MetadataLoadContext"/>
+        <AssemblyMetadata Include="StellarEngineCoreDir" Value="$(StellarRoot)"/>
+        <AssemblyMetadata Include="StellarTestConfiguration" Value="$(Configuration)"/>
+    </ItemGroup>
+
+    <Import Project="$(StellarRoot)SDK/src/MSBuild/Stellar.Sdk/InRepo/Sdk.targets"/>
+</Project>

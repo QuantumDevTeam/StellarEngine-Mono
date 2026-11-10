@@ -1,0 +1,18 @@
+<Project>
+    <!--
+        Created by 'stellar install', and never overwritten afterwards: the settings of this installation.
+
+        Imported by Stellar.Sdk into every project of the installation (modules, games, their tests), BEFORE the
+        project body: the project can still override anything set here. Only properties belong here; the project
+        is not known yet ($(StellarSdkUsage) is empty).
+
+        Examples:
+            <StellarNativeWrapper>Managed</StellarNativeWrapper>
+            <StellarPrecompiled>true</StellarPrecompiled>
+            <StellarAnalyzers>false</StellarAnalyzers>
+
+        Every property of the SDK: Docs/Reference/Sdk.Properties.md. Another file: set StellarCustomBeforeSdkProps.
+    -->
+    <PropertyGroup>
+    </PropertyGroup>
+</Project>

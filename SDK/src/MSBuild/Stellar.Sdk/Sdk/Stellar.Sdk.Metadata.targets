@@ -1,0 +1,23 @@
+<Project>
+    <!--
+        What an assembly says about itself, as [AssemblyMetadata]. Tooling, the analyzers of the projects that
+        reference it, and the runtime read these instead of guessing. Switch off with StellarStampMetadata=false.
+    -->
+    <ItemGroup Condition="'$(StellarSdkUsage)' != '' and '$(StellarStampMetadata)' != 'false'">
+        <AssemblyMetadata Include="StellarSdkUsage" Value="$(StellarSdkUsage)"/>
+        <AssemblyMetadata Include="StellarNativeWrapper" Value="$(StellarNativeWrapper)"/>
+        <AssemblyMetadata Include="StellarOrchesterVersion" Value="$(StellarOrchesterVersion)" Condition="'$(StellarIsCoreProject)' != 'true'"/>
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(StellarIsModule)' == 'true' and '$(StellarStampMetadata)' != 'false'">
+        <AssemblyMetadata Include="StellarModuleId" Value="$(StellarModuleId)"/>
+        <AssemblyMetadata Include="StellarModuleLevel" Value="$(StellarModuleLevel)"/>
+        <AssemblyMetadata Include="StellarModuleDependencies" Value="$(StellarModuleDependencies)"/>
+    </ItemGroup>
+
+    <!-- The core states its level too, so the level rule needs no exception for it -->
+    <ItemGroup Condition="'$(_StellarIsEngineCore)' == 'true' and '$(StellarStampMetadata)' != 'false'">
+        <AssemblyMetadata Include="StellarModuleId" Value="Stellar.Core"/>
+        <AssemblyMetadata Include="StellarModuleLevel" Value="Core"/>
+    </ItemGroup>
+</Project>

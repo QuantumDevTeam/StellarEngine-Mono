@@ -1,0 +1,48 @@
+<Project>
+    <!--
+        A project is a module when the catalog knows its $(StellarModuleId): it then gets from its descriptor what it
+        would otherwise have to repeat. Each step only fills what the project left empty, and each has a switch:
+
+          StellarSdkUsage       from the level                         StellarModuleAutoUsage=false
+          Version               from the descriptor                    StellarModuleAutoVersion=false
+          ModuleDescription     from the descriptor                    (set ModuleDescription)
+          StellarDependency     one per dependency of the descriptor   StellarModuleAutoDependencies=false
+          native libraries      the DLLs of its native projects        StellarModuleCopyNativeLibraries=false
+
+        A dependency is removed like any item: <StellarDependency Remove="Stellar.Logging"/>.
+    -->
+    <PropertyGroup Condition="'$(StellarModuleKnown)' == 'true'">
+        <StellarIsModule>true</StellarIsModule>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(StellarIsModule)' == 'true' and '$(StellarSdkUsage)' == '' and '$(StellarModuleAutoUsage)' != 'false'">
+        <StellarSdkUsage Condition="'$(StellarModuleLevel)' == 'CoreModule'">EngineCoreModule</StellarSdkUsage>
+        <StellarSdkUsage Condition="'$(StellarModuleLevel)' == 'Runtime' or '$(StellarModuleLevel)' == 'HighLevel'">EngineModule</StellarSdkUsage>
+        <StellarSdkUsage Condition="'$(StellarModuleLevel)' == 'EndPoint'">Module</StellarSdkUsage>
+        <_StellarSdkUsageFromLevel>true</_StellarSdkUsageFromLevel>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(StellarIsModule)' == 'true'">
+        <Version Condition="'$(Version)' == '' and '$(StellarModuleAutoVersion)' != 'false'">$(StellarModuleVersion)</Version>
+        <ModuleDescription Condition="'$(ModuleDescription)' == ''">$(StellarModuleDescription)</ModuleDescription>
+        <PackageProjectUrl Condition="'$(PackageProjectUrl)' == ''">$(StellarModuleRepository)</PackageProjectUrl>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(StellarIsModule)' == 'true' and '$(StellarModuleAutoDependencies)' != 'false' and '$(StellarModuleDependencies)' != ''">
+        <StellarDependency Include="$(StellarModuleDependencies)"/>
+    </ItemGroup>
+
+    <!--
+        The native projects of the module build into $(StellarArtifactsBinDir)<project>/<configuration>/ (see
+        Shared/Build/Stellar.Native.props). Their DLLs travel with the managed assembly: next to it in the output,
+        and in runtimes/win-x64/native of its package. Any project may add its own StellarNativeLibrary items.
+    -->
+    <PropertyGroup>
+        <StellarNativeConfiguration Condition="'$(StellarNativeConfiguration)' == ''">$(Configuration)</StellarNativeConfiguration>
+        <StellarNativeConfiguration Condition="'$(StellarNativeConfiguration)' == ''">Debug</StellarNativeConfiguration>
+    </PropertyGroup>
+    <ItemGroup Condition="'$(StellarIsModule)' == 'true' and '$(StellarModuleCopyNativeLibraries)' != 'false' and '$(StellarModuleNativeLibraries)' != ''">
+        <_StellarModuleNativeProject Include="$(StellarModuleNativeLibraries)"/>
+        <StellarNativeLibrary Include="@(_StellarModuleNativeProject->'$(StellarArtifactsBinDir)%(Identity)/$(StellarNativeConfiguration)/%(Identity).dll')"/>
+    </ItemGroup>
+</Project>

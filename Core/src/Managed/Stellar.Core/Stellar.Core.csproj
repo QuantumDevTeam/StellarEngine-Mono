@@ -1,0 +1,59 @@
+<Project>
+    <!--
+        Stellar.Core is built through Stellar.Sdk, straight from its sources (InRepo): the SDK picks the wrapper of
+        the native core with $(StellarNativeWrapper) and references it, exactly as it does for games and modules.
+    -->
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Stellar.Sdk.InRepo.props'))"/>
+
+    <PropertyGroup>
+        <StellarSdkUsage>EngineCore</StellarSdkUsage>
+
+        <TargetFramework>net9.0</TargetFramework>
+        <RootNamespace>Stellar.Core</RootNamespace>
+        <ImplicitUsings>enable</ImplicitUsings>
+
+        <Version>$(StellarCoreVersion)</Version>
+        <AssemblyVersion>$(Version)</AssemblyVersion>
+
+        <IsPackable>true</IsPackable>
+        <PackageId>Stellar.Core</PackageId>
+        <Description>StellarEngine Core: quants, registries, containers, failures and the native core</Description>
+
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <!--
+        The package is made on the machine that uses it (the engine ships as sources), so it carries the wrapper
+        Stellar.Core was built with on this machine, and the native core under it.
+    -->
+    <PropertyGroup>
+        <Description>$(Description). Native wrapper: $(StellarNativeWrapper)</Description>
+        <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);StellarCorePackWrapperAssembly</TargetsForTfmSpecificBuildOutput>
+        <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);StellarCorePackNativeCore</TargetsForTfmSpecificContentInPackage>
+    </PropertyGroup>
+
+    <Target Name="StellarCorePackWrapperAssembly">
+        <ItemGroup>
+            <BuildOutputInPackage Include="$(OutDir)Stellar.Native.Core.Wrapper.$(StellarNativeWrapper).dll"/>
+            <BuildOutputInPackage Include="$(OutDir)Stellar.Native.Core.Wrapper.$(StellarNativeWrapper).xml"
+                                  Condition="Exists('$(OutDir)Stellar.Native.Core.Wrapper.$(StellarNativeWrapper).xml')"/>
+        </ItemGroup>
+    </Target>
+
+    <Target Name="StellarCorePackNativeCore">
+        <ItemGroup>
+            <_StellarNativeLibrary Include="$(OutDir)Stellar.Native.Core.dll"/>
+            <_StellarNativeLibrary Include="$(OutDir)Ijwhost.dll" Condition="'$(StellarNativeWrapper)' == 'Cli'"/>
+            <_StellarNativeLibrary Include="$(OutDir)Stellar.Native.Core.Wrapper.PInvoke.dll" Condition="'$(StellarNativeWrapper)' == 'Managed'"/>
+        </ItemGroup>
+
+        <Error Condition="!Exists('%(_StellarNativeLibrary.Identity)')"
+               Text="Cannot pack Stellar.Core: %(_StellarNativeLibrary.Identity) is missing. Build the native core first (scripts/build.ps1)."/>
+
+        <ItemGroup>
+            <TfmSpecificPackageFile Include="@(_StellarNativeLibrary)" PackagePath="runtimes/win-x64/native/"/>
+        </ItemGroup>
+    </Target>
+
+    <Import Project="$(StellarRoot)SDK/src/MSBuild/Stellar.Sdk/InRepo/Sdk.targets"/>
+</Project>

@@ -1,0 +1,9 @@
+<Project Sdk="Stellar.Sdk">
+    <PropertyGroup>
+        <StellarSdkUsage>Tests</StellarSdkUsage>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <StellarDependency Include="{{ModuleId}}"/>
+    </ItemGroup>
+</Project>

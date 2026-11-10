@@ -1,0 +1,17 @@
+<Project>
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Stellar.Sdk.InRepo.props'))"/>
+
+    <PropertyGroup>
+        <StellarSdkUsage>Tests</StellarSdkUsage>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <!-- What Tools writes at build time, the runtime must read -->
+    <ItemGroup>
+        <ProjectReference Include="$(StellarRoot)SDK/src/Stellar.Tools/Stellar.Tools.csproj"/>
+        <ProjectReference Include="$(StellarRoot)Runtime/src/Managed/Stellar.Runtime/Stellar.Runtime.csproj"/>
+    </ItemGroup>
+
+    <Import Project="$(StellarRoot)SDK/src/MSBuild/Stellar.Sdk/InRepo/Sdk.targets"/>
+</Project>

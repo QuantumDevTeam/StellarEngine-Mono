@@ -1,0 +1,8 @@
+{
+  "$schema": "{{StellarSchemasUri}}stellar.project.schema.json",
+  "Project": {
+    "StellarEntryPoint": "default"
+  },
+  "Runtime": {
+  }
+}

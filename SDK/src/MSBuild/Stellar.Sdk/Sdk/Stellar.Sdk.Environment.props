@@ -1,0 +1,34 @@
+<Project>
+    <!-- Component versions of this SDK. Inside the core they come from its build files already -->
+    <Import Project="Stellar.Versions.props" Condition="'$(StellarOrchesterVersion)' == '' and Exists('$(MSBuildThisFileDirectory)Stellar.Versions.props')"/>
+
+    <!--
+        Locating the installation ($STELLAR_ROOT, a checkout of StellarEngine-Core), in order of priority:
+          1. the StellarRoot property (modules/ and projects/ of an installation set it)
+          2. the STELLAR_ROOT environment variable
+          3. a directory above the project that contains manifests/engine.manifest.json
+          4. the per-user pointer ~/.stellar/<version>/installation_location.txt, written by 'stellar install'
+        The same order as Stellar.Tools.Environment.StellarInstallation.
+    -->
+    <PropertyGroup>
+        <StellarRoot Condition="'$(StellarRoot)' == ''">$([System.Environment]::GetEnvironmentVariable('STELLAR_ROOT'))</StellarRoot>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(StellarRoot)' == ''">
+        <_StellarManifestAbove>$([MSBuild]::GetDirectoryNameOfFileAbove('$(MSBuildProjectDirectory)', 'manifests/engine.manifest.json'))</_StellarManifestAbove>
+        <StellarRoot Condition="'$(_StellarManifestAbove)' != ''">$(_StellarManifestAbove)</StellarRoot>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(StellarRoot)' == ''">
+        <_StellarUserDirectory Condition="'$(OS)' == 'Windows_NT'">$(USERPROFILE)/.stellar/$(StellarOrchesterVersion)</_StellarUserDirectory>
+        <_StellarUserDirectory Condition="'$(OS)' != 'Windows_NT'">$(HOME)/.stellar/$(StellarOrchesterVersion)</_StellarUserDirectory>
+        <_StellarPointerFile>$(_StellarUserDirectory)/installation_location.txt</_StellarPointerFile>
+        <StellarRoot Condition="Exists('$(_StellarPointerFile)')">$([System.IO.File]::ReadAllText('$(_StellarPointerFile)').Trim())</StellarRoot>
+    </PropertyGroup>
+
+    <!-- The layout of the installation: Stellar.Tools.Environment.StellarInstallation is the same tree in code -->
+    <PropertyGroup Condition="'$(StellarRoot)' != ''">
+        <StellarRoot>$([MSBuild]::EnsureTrailingSlash('$(StellarRoot)'))</StellarRoot>
+        <StellarPackagesDir Condition="'$(StellarPackagesDir)' == ''">$(StellarRoot)packages/</StellarPackagesDir>
+        <StellarArtifactsDir Condition="'$(StellarArtifactsDir)' == ''">$(StellarRoot)artifacts/</StellarArtifactsDir>
+        <StellarModuleCatalog Condition="'$(StellarModuleCatalog)' == ''">$(StellarRoot)manifests/.generated/stellar.modules.props</StellarModuleCatalog>
+    </PropertyGroup>
+</Project>
