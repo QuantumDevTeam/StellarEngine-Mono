@@ -1,0 +1,15 @@
+<Project>
+    <!--
+        Created by 'stellar install', and never overwritten afterwards: the build steps of this installation.
+
+        Imported by Stellar.Sdk into every project of the installation AFTER everything else: the project and the SDK
+        are fully known here. The place for targets that hook into the pipeline, and for decisions that depend on
+        the kind of project:
+
+            <Target Name="MyStep" AfterTargets="StellarCompileResources" Condition="'$(StellarSdkUsage)' == 'ExecutableModule'">
+                ...
+            </Target>
+
+        Another file: set StellarCustomAfterSdkTargets.
+    -->
+</Project>

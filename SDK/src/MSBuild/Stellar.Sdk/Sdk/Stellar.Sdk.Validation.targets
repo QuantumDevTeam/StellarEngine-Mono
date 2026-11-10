@@ -1,0 +1,36 @@
+<Project>
+    <!--
+        Mistakes in the project file, caught before anything is compiled. Switch the whole check off with
+        StellarValidateProjectFile=false; the warnings follow the usual MSBuild rules (NoWarn, WarningsAsErrors).
+    -->
+    <PropertyGroup>
+        <_StellarKnownUsages>;Tests;ExecutableModule;Module;EngineModule;EngineCoreModule;EngineCore;</_StellarKnownUsages>
+
+        <!-- A descriptor above the project means it was meant to be a module -->
+        <_StellarDescriptorAbove Condition="'$(StellarIsModule)' != 'true'">$([MSBuild]::GetDirectoryNameOfFileAbove('$(MSBuildProjectDirectory)', '$(StellarModuleId).stellar.module'))</_StellarDescriptorAbove>
+
+        <!-- The catalog is stale when the descriptor is newer. Short conditions: nothing for a formatter to wrap -->
+        <_StellarCanCheckCatalog Condition="'$(StellarIsModule)' == 'true' and Exists('$(StellarModuleDescriptorFile)') and Exists('$(StellarModuleCatalog)')">true</_StellarCanCheckCatalog>
+        <_StellarDescriptorTicks Condition="'$(_StellarCanCheckCatalog)' == 'true'">$([System.IO.File]::GetLastWriteTime('$(StellarModuleDescriptorFile)').Ticks)</_StellarDescriptorTicks>
+        <_StellarCatalogTicks Condition="'$(_StellarCanCheckCatalog)' == 'true'">$([System.IO.File]::GetLastWriteTime('$(StellarModuleCatalog)').Ticks)</_StellarCatalogTicks>
+        <_StellarCatalogStale Condition="'$(_StellarCanCheckCatalog)' == 'true' and $(_StellarDescriptorTicks) &gt; $(_StellarCatalogTicks)">true</_StellarCatalogStale>
+    </PropertyGroup>
+
+    <Target Name="StellarValidateProjectFile" BeforeTargets="PrepareForBuild;CollectPackageReferences" Condition="'$(StellarValidateProjectFile)' != 'false'">
+        <Error Code="STLRB001" Condition="'$(StellarSdkUsage)' == ''"
+               Text="$(MSBuildProjectName) uses Stellar.Sdk but does not set StellarSdkUsage, and is not a module the catalog knows. Set StellarSdkUsage, or run 'stellar modules sync' if it is a module."/>
+        <Error Code="STLRB002" Condition="'$(StellarSdkUsage)' != '' and !$(_StellarKnownUsages.Contains(';$(StellarSdkUsage);'))"
+               Text="Unknown StellarSdkUsage '$(StellarSdkUsage)': expected one of $(_StellarKnownUsages.Trim(';').Replace(';', ', '))."/>
+        <Error Code="STLRB003" Condition="'$(_StellarIsEngineCore)' == 'true' and '$(StellarIsCoreProject)' != 'true' and '$(StellarSdkInRepo)' != 'true'"
+               Text="StellarSdkUsage=EngineCore is Stellar.Core itself. A core system is EngineCoreModule."/>
+
+        <Warning Code="STLRB101" Condition="'$(_StellarDescriptorAbove)' != ''"
+                 Text="$(_StellarDescriptorAbove)$(StellarModuleId).stellar.module describes this project, but the module catalog does not know it yet: run 'stellar modules sync'."/>
+        <Warning Code="STLRB102" Condition="'$(_StellarCatalogStale)' == 'true'"
+                 Text="$(StellarModuleDescriptorFile) changed after the module catalog was generated: run 'stellar modules sync'."/>
+        <Warning Code="STLRB103" Condition="'$(StellarIsModule)' == 'true' and '$(_StellarSdkUsageFromLevel)' != 'true'
+                                            and (('$(StellarModuleLevel)' == 'CoreModule' and '$(StellarSdkUsage)' != 'EngineCoreModule')
+                                              or (('$(StellarModuleLevel)' == 'HighLevel' or '$(StellarModuleLevel)' == 'Runtime') and '$(StellarSdkUsage)' != 'EngineModule' and '$(StellarSdkUsage)' != 'ExecutableModule'))"
+                 Text="$(StellarModuleId) is a $(StellarModuleLevel) module, but the project says StellarSdkUsage=$(StellarSdkUsage). Remove StellarSdkUsage to take the one of the level."/>
+    </Target>
+</Project>

@@ -1,0 +1,33 @@
+<Project>
+    <!-- Settings of the projects of the core (Kernel, Core, SDK). Modules and games never see this file -->
+    <Import Project="Stellar.Versions.props"/>
+
+    <!-- Into artifacts/ of the root, as everything else built here. Directory.Build.props runs early enough for it -->
+    <Import Project="Stellar.Artifacts.props" Condition="'$(_StellarArtifactsImported)' != 'true'"/>
+
+    <PropertyGroup>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <WarningsAsErrors>$(WarningsAsErrors);nullable</WarningsAsErrors>
+
+        <Authors>QuantumDevTeam</Authors>
+        <Company>QuantumDevTeam</Company>
+        <Product>StellarEngine</Product>
+        <Copyright>Copyright (c) 2026 QuantumDevTeam</Copyright>
+        <PackageLicenseExpression>PolyForm-Noncommercial-1.0.0</PackageLicenseExpression>
+        <PackageIcon>Logo.png</PackageIcon>
+
+        <!-- The local feed of the installation this checkout is the root of -->
+        <PackageOutputPath>$(StellarRoot)packages/</PackageOutputPath>
+
+        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+
+        <!-- artifacts/bin/<project>/<configuration>/: a project with several frameworks sets it back to true -->
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(IsPackable)' == 'true'">
+        <None Include="$(StellarRoot)Shared/Branding/Logo.png" Pack="true" PackagePath="/" Visible="false"/>
+    </ItemGroup>
+</Project>

@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <!--
+        A stand-in for Stellar.Core in the tests of the runtime: a module of the core level that owns the services of
+        the engine and reports failures. Its runtime configuration is embedded, for the tests of the embedded source.
+    -->
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="$(StellarRoot)Kernel/src/Managed/Stellar.Kernel/Stellar.Kernel.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Host.stellar.runtime.config.json" LogicalName="Host:Host.stellar.runtime.config.json"/>
+        <AssemblyAttribute Include="Stellar.Kernel.Configuration.StellarRuntimeConfigurationAttribute">
+            <_Parameter1>Host:Host.stellar.runtime.config.json</_Parameter1>
+            <_Parameter2>Embedded</_Parameter2>
+        </AssemblyAttribute>
+    </ItemGroup>
+</Project>

@@ -1,0 +1,8 @@
+{
+  "$schema": "{{StellarSchemasUri}}stellar.module.schema.json",
+  "Id": "{{ModuleId}}",
+  "Version": "{{ModuleVersion}}",
+  "Level": "{{ModuleLevel}}",
+  "Description": "{{ModuleDescription}}",
+  "Dependencies": []
+}

@@ -1,0 +1,61 @@
+<Project>
+    <!--
+        Module references.
+
+        A project lists what it needs with plain items, a module gets them from its descriptor:
+
+            <ItemGroup>
+                <StellarDependency Include="Stellar.Logging"/>
+            </ItemGroup>
+
+        Each name is looked up in the catalog and becomes a ProjectReference or a PackageReference: by the Link of
+        the module in the manifest when it has one, by $(StellarPrecompiled) otherwise. All of it happens at
+        evaluation time, so restore and the IDE see the real references. No custom task is involved.
+    -->
+
+    <!-- What every kind of project gets implicitly. The core itself depends on the Kernel only -->
+    <ItemGroup Condition="'$(StellarSdkUsage)' != ''">
+        <StellarDependency Include="Stellar.Kernel" Condition="'$(StellarImplicitKernelReference)' != 'false'"/>
+        <StellarDependency Include="Stellar.Core" Condition="'$(StellarSdkUsage)' != 'EngineCore' and '$(StellarImplicitCoreReference)' != 'false'"/>
+        <!-- The launcher of an executable module calls the runtime: it must be next to it -->
+        <StellarDependency Include="Stellar.Runtime" Condition="'$(_StellarIsExecutable)' == 'true' and '$(StellarImplicitRuntimeReference)' != 'false'"/>
+    </ItemGroup>
+
+    <!-- Sources are the default of Debug, but they are missing on a machine that only has packages -->
+    <PropertyGroup Condition="'$(StellarPrecompiled)' != 'true' and !Exists('$(StellarRoot)Core/src/Managed/Stellar.Core/Stellar.Core.csproj')">
+        <StellarPrecompiled>true</StellarPrecompiled>
+        <_StellarSourcesMissing>true</_StellarSourcesMissing>
+    </PropertyGroup>
+
+    <!-- Catalog join: requested modules with their metadata, and requested modules nobody knows -->
+    <ItemGroup>
+        <_StellarModuleNotRequested Include="@(StellarModuleInfo)"/>
+        <_StellarModuleNotRequested Remove="@(StellarDependency)"/>
+
+        <_StellarResolvedModule Include="@(StellarModuleInfo)"/>
+        <_StellarResolvedModule Remove="@(_StellarModuleNotRequested)"/>
+
+        <_StellarUnknownModule Include="@(StellarDependency)"/>
+        <_StellarUnknownModule Remove="@(StellarModuleInfo)"/>
+    </ItemGroup>
+
+    <!-- How each one is linked: pinned by the manifest, or by the project -->
+    <ItemGroup>
+        <_StellarAsSources Include="@(_StellarResolvedModule->WithMetadataValue('Link', 'Sources'))"/>
+        <_StellarAsPackage Include="@(_StellarResolvedModule->WithMetadataValue('Link', 'Package'))"/>
+        <_StellarAsSources Include="@(_StellarResolvedModule->WithMetadataValue('Link', 'Default'))" Condition="'$(StellarPrecompiled)' != 'true'"/>
+        <_StellarAsPackage Include="@(_StellarResolvedModule->WithMetadataValue('Link', 'Default'))" Condition="'$(StellarPrecompiled)' == 'true'"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="@(_StellarAsSources->'%(ProjectPath)')"/>
+        <PackageReference Include="@(_StellarAsPackage)"/>
+    </ItemGroup>
+
+    <Target Name="StellarValidateDependencies" BeforeTargets="CollectPackageReferences;ResolveProjectReferences">
+        <Error Condition="'@(_StellarUnknownModule)' != ''"
+               Text="Unknown Stellar modules: @(_StellarUnknownModule). A module is known once its folder (with a .stellar.module file) is under modules/ of the installation, or added with 'stellar modules add', and 'stellar modules sync' ran."/>
+        <Warning Condition="'$(_StellarSourcesMissing)' == 'true'"
+                 Text="The sources of the core are not in '$(StellarRoot)', building against the packages instead."/>
+    </Target>
+</Project>

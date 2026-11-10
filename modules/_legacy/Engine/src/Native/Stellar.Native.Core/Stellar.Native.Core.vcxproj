@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <!-- Configurations -->
+    <ItemGroup Label="ProjectConfigurations">
+        <ProjectConfiguration Include="Debug|x64">
+            <Configuration>Debug</Configuration>
+            <Platform>x64</Platform>
+        </ProjectConfiguration>
+        <ProjectConfiguration Include="Release|x64">
+            <Configuration>Release</Configuration>
+            <Platform>x64</Platform>
+        </ProjectConfiguration>
+    </ItemGroup>
+    <!-- Global Propertyes -->
+    <PropertyGroup Label="Globals">
+        <VCProjectVersion>17.0</VCProjectVersion>
+        <ProjectGuid>{094D70EB-BA0B-45F7-86D8-F7E79660B578}</ProjectGuid>
+        <Keyword>Win32Proj</Keyword>
+        <RootNamespace>Stellar.Native.Core</RootNamespace>
+        <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    </PropertyGroup>
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props"/>
+
+    <!-- compile configuration -->
+    <PropertyGroup>
+        <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+        <OutDir>$(SolutionDir)Engine\bin\$(ProjectName)\$(Configuration)\</OutDir>
+        <IntDir>$(Configuration)\</IntDir>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+        <ConfigurationType>StaticLibrary</ConfigurationType>
+        <UseDebugLibraries>true</UseDebugLibraries>
+        <PlatformToolset>v145</PlatformToolset>
+        <CharacterSet>Unicode</CharacterSet>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+        <ConfigurationType>StaticLibrary</ConfigurationType>
+        <UseDebugLibraries>false</UseDebugLibraries>
+        <PlatformToolset>v145</PlatformToolset>
+        <CharacterSet>Unicode</CharacterSet>
+        <WholeProgramOptimization>true</WholeProgramOptimization>
+    </PropertyGroup>
+
+    <!-- Extensions -->
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props"/>
+    <ImportGroup Label="ExtensionSettings">
+    </ImportGroup>
+    <ImportGroup Label="Shared">
+    </ImportGroup>
+    <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+        <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform"/>
+    </ImportGroup>
+    <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+        <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform"/>
+    </ImportGroup>
+    <PropertyGroup Label="UserMacros"/>
+
+    <!-- DEBUG compiler configuration settings -->
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+        <LinkIncremental>true</LinkIncremental>
+    </PropertyGroup>
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+        <ClCompile>
+            <!-- PCH -->
+            <PrecompiledHeader>Use</PrecompiledHeader>
+            <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+            <!-- Warn's -->
+            <WarningLevel>Level3</WarningLevel>
+            <!-- Preprocessor -->
+            <PreprocessorDefinitions>
+                _DEBUG;
+                CPPDYNAMICLIBRARYTEMPLATE_EXPORTS;
+                _WINDOWS;
+                _USRDLL;
+                IS_UNORDERED_DataContainer;
+                %(PreprocessorDefinitions)
+            </PreprocessorDefinitions>
+            <AdditionalIncludeDirectories>
+                %(AdditionalIncludeDirectories)
+            </AdditionalIncludeDirectories>
+            <!-- Optimizations -->
+            <Optimization>Disabled</Optimization>
+            <!-- C/C++ standard -->
+            <LanguageStandard>stdcpp23</LanguageStandard>
+            <LanguageStandard_C>stdc17</LanguageStandard_C>
+            <!-- Other -->
+            <SDLCheck>true</SDLCheck>
+            <ConformanceMode>true</ConformanceMode>
+            <!-- Future -->
+            <!-- <BuildStlModules>true</BuildStlModules> -->
+        </ClCompile>
+        <Link>
+            <!-- Dep's -->
+            <AdditionalDependencies>
+                %(AdditionalDependencies)
+            </AdditionalDependencies>
+            <AdditionalLibraryDirectories>
+                %(AdditionalLibraryDirectories)
+            </AdditionalLibraryDirectories>
+            <!-- Other -->
+            <SubSystem>Windows</SubSystem>
+            <GenerateDebugInformation>true</GenerateDebugInformation>
+        </Link>
+    </ItemDefinitionGroup>
+    <!-- RELEASE compiler configuration settings -->
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+        <LinkIncremental>false</LinkIncremental>
+    </PropertyGroup>
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+        <ClCompile>
+            <!-- PCH -->
+            <PrecompiledHeader>Use</PrecompiledHeader>
+            <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+            <!-- Warn's -->
+            <WarningLevel>Level3</WarningLevel>
+            <!--Preprocessor -->
+            <PreprocessorDefinitions>
+                NDEBUG;
+                CPPDYNAMICLIBRARYTEMPLATE_EXPORTS;
+                _WINDOWS;
+                _USRDLL;
+                %(PreprocessorDefinitions)
+            </PreprocessorDefinitions>
+            <AdditionalIncludeDirectories>
+                %(AdditionalIncludeDirectories)
+            </AdditionalIncludeDirectories>
+            <!-- Optimizations -->
+            <Optimization>MaxSpeed</Optimization>
+            <FunctionLevelLinking>true</FunctionLevelLinking>
+            <IntrinsicFunctions>true</IntrinsicFunctions>
+            <!-- C/C++ standard -->
+            <LanguageStandard>stdcpp23</LanguageStandard>
+            <LanguageStandard_C>stdc17</LanguageStandard_C>
+            <!-- Other -->
+            <SDLCheck>true</SDLCheck>
+            <ConformanceMode>true</ConformanceMode>
+            <!-- Future -->
+            <!-- <BuildStlModules>true</BuildStlModules> -->
+        </ClCompile>
+        <Link>
+            <!-- Dep's -->
+            <AdditionalDependencies>
+                %(AdditionalDependencies)
+            </AdditionalDependencies>
+            <AdditionalLibraryDirectories>
+                %(AdditionalLibraryDirectories)
+            </AdditionalLibraryDirectories>
+            <!-- Other -->
+            <SubSystem>Windows</SubSystem>
+            <EnableCOMDATFolding>true</EnableCOMDATFolding>
+            <OptimizeReferences>true</OptimizeReferences>
+            <GenerateDebugInformation>false</GenerateDebugInformation>
+        </Link>
+    </ItemDefinitionGroup>
+
+    <!-- Source Code - HEADER FILES -->
+    <ItemGroup>
+        <ClInclude Include="Data\Collections\ConcurrentMap\ConcurrentFlatMap.h" />
+        <ClInclude Include="Data\Collections\ConcurrentMap\ConcurrentMap.inl" />
+        <ClInclude Include="Data\Collections\ConcurrentQueue\ConcurrentPriorityQueue.h" />
+        <ClInclude Include="Data\Collections\ConcurrentVector\ConcurrentVector.h" />
+        <ClInclude Include="Data\Collections\DataContainer.h"/>
+        <ClInclude Include="Data\Collections\ConcurrentMap\ConcurrentUnorderedMap.h" />
+        <ClInclude Include="Data\Collections\DataContainerType.h" />
+        <ClInclude Include="Data\Collections\DoubleBuffered\DoubleBufferedSnapshotMap.h"/>
+        <ClInclude Include="Data\Collections\DoubleBuffered\DoubleBufferedSnapshotMap.inl"/>
+        <ClInclude Include="Data\Collections\ICollection.h"/>
+        <ClInclude Include="Data\Registry\IdentifierRegistry.h"/>
+        <ClInclude Include="Data\Registry\LabelRegistry.h"/>
+        <ClInclude Include="Extensions.h" />
+        <ClInclude Include="Failures\FailureLevel.h"/>
+        <ClInclude Include="Failures\NativeException.h"/>
+        <ClInclude Include="Identifier.h"/>
+        <ClInclude Include="Identifier.inl"/>
+        <ClInclude Include="Label.h"/>
+        <ClInclude Include="Label.inl" />
+        <ClInclude Include="pch.h"/>
+        <ClInclude Include="_Mixins\Hashable.h" />
+        <ClInclude Include="_Mixins\Identifiable.h" />
+        <ClInclude Include="_Mixins\Stringable.h" />
+    </ItemGroup>
+    <!-- Source Code - SOURCE FILES -->
+    <ItemGroup>
+        <ClCompile Include="Data\Collections\ConcurrentQueue\ConcurrentPriorityQueue.cpp" />
+        <ClCompile Include="Data\Collections\ConcurrentVector\ConcurrentVector.cpp" />
+        <ClCompile Include="Data\Registry\IdentifierRegistry.cpp"/>
+        <ClCompile Include="Data\Registry\LabelRegistry.cpp"/>
+        <ClCompile Include="Identifier.cpp"/>
+        <ClCompile Include="Label.cpp"/>
+        <!-- Future -->
+        <!-- <ClCompile Include="module\Core.ixx"/> -->
+        <!-- <ClCompile Include="module\Data\Collections\Collections.ixx"/> -->
+        <!-- <ClCompile Include="module\Data\Registry\Registry.ixx"/> -->
+        <!-- <ClCompile Include="module\Failures\Failures.ixx"/> -->
+        <!-- <ClCompile Include="module\Quantization\Quantization.ixx"/> -->
+        <ClCompile Include="pch.cpp">
+            <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+            <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+        </ClCompile>
+    </ItemGroup>
+
+    <!-- Other -->
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
+    <ImportGroup Label="ExtensionTargets">
+    </ImportGroup>
+</Project>

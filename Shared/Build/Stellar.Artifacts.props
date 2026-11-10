@@ -1,0 +1,36 @@
+<Project>
+    <!--
+        Where everything built goes: one tree under the root of the installation, the same for managed and native
+        projects, for the core and for the modules.
+
+            artifacts/
+            ├── bin/<name>/<configuration>/[<target framework>/]   assemblies, libraries, executables
+            └── obj/<name>/[<configuration>/]                     intermediate files, restore
+
+        A project with several target frameworks sets AppendTargetFrameworkToOutputPath=true in its body, and gets
+        one more level; the core and Stellar.Sdk default it to false for everything else.
+
+        <name> is the project, or <project>-<variant> where one project builds several ways (the projects of the core
+        that depend on the wrapper of the native core: Stellar.Core-Cli, Stellar.Core-Managed). Managed projects that
+        target several frameworks get one more level, the framework; native ones have none.
+
+        Imported by Directory.Build.props of the root for the core, by Stellar.Sdk before Microsoft.NET.Sdk for the
+        modules and the games, by Stellar.Native.props for native projects. Imported once.
+
+          StellarUseArtifactsOutput=false   the plain layout, bin/ and obj/ next to the project
+          StellarArtifactsDir               another tree
+          StellarArtifactsName              another name for the project
+    -->
+    <PropertyGroup Condition="'$(_StellarArtifactsImported)' != 'true'">
+        <_StellarArtifactsImported>true</_StellarArtifactsImported>
+        <StellarArtifactsDir Condition="'$(StellarArtifactsDir)' == '' and '$(StellarRoot)' != ''">$([MSBuild]::EnsureTrailingSlash('$(StellarRoot)'))artifacts/</StellarArtifactsDir>
+        <StellarArtifactsName Condition="'$(StellarArtifactsName)' == ''">$(MSBuildProjectName)</StellarArtifactsName>
+        <StellarArtifactsBinDir>$(StellarArtifactsDir)bin/</StellarArtifactsBinDir>
+        <StellarArtifactsObjDir>$(StellarArtifactsDir)obj/</StellarArtifactsObjDir>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(StellarUseArtifactsOutput)' != 'false' and '$(StellarArtifactsDir)' != ''">
+        <BaseOutputPath>$(StellarArtifactsBinDir)$(StellarArtifactsName)/</BaseOutputPath>
+        <BaseIntermediateOutputPath>$(StellarArtifactsObjDir)$(StellarArtifactsName)/</BaseIntermediateOutputPath>
+    </PropertyGroup>
+</Project>

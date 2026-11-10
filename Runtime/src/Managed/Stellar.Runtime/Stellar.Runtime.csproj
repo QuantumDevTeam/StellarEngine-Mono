@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <!--
+        The runtime starts before Stellar.Core and loads it like any other module: it depends on the Kernel only.
+    -->
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <RootNamespace>Stellar.Runtime</RootNamespace>
+        <ImplicitUsings>enable</ImplicitUsings>
+
+        <Version>$(StellarRuntimeVersion)</Version>
+        <AssemblyVersion>$(Version)</AssemblyVersion>
+
+        <IsPackable>true</IsPackable>
+        <PackageId>Stellar.Runtime</PackageId>
+        <Description>StellarEngine Runtime: loads the configuration and the modules of an application, starts and stops the engine, runs the main loop</Description>
+
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="$(StellarRoot)Kernel/src/Managed/Stellar.Kernel/Stellar.Kernel.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="Stellar.Runtime.Tests"/>
+    </ItemGroup>
+</Project>

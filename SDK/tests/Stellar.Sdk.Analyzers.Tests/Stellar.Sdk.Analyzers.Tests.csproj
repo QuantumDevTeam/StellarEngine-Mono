@@ -1,0 +1,21 @@
+<Project>
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Stellar.Sdk.InRepo.props'))"/>
+
+    <PropertyGroup>
+        <StellarSdkUsage>Tests</StellarSdkUsage>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+
+        <!-- The analyzers run inside the compiler: they need neither the engine nor its native core -->
+        <StellarImplicitKernelReference>false</StellarImplicitKernelReference>
+        <StellarImplicitCoreReference>false</StellarImplicitCoreReference>
+        <StellarReferenceNativeWrapper>false</StellarReferenceNativeWrapper>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="$(StellarRoot)SDK/src/Roslyn/Stellar.Sdk.Analyzers/Stellar.Sdk.Analyzers.csproj"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp"/>
+    </ItemGroup>
+
+    <Import Project="$(StellarRoot)SDK/src/MSBuild/Stellar.Sdk/InRepo/Sdk.targets"/>
+</Project>

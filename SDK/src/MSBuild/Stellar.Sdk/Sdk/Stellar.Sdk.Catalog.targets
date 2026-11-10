@@ -1,0 +1,28 @@
+<Project>
+    <!--
+        The catalog: every module a project may depend on.
+
+        The modules of the core are built in. The modules of the installation come from the file 'stellar modules
+        sync' generates from their descriptors and the manifest. That file also holds a property group per module,
+        active only in the project whose $(StellarModuleId) is that module: this is how a module project learns its
+        level, version and dependencies without repeating them (Stellar.Sdk.Module.targets).
+    -->
+    <PropertyGroup>
+        <StellarModuleId Condition="'$(StellarModuleId)' == ''">$(AssemblyName)</StellarModuleId>
+        <StellarModuleId Condition="'$(StellarModuleId)' == ''">$(MSBuildProjectName)</StellarModuleId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <StellarModuleInfo Include="Stellar.Kernel" Version="[$(StellarKernelVersion)]" Level="Kernel" Link="Default" Source="Core"
+                           ProjectPath="$(StellarRoot)Kernel/src/Managed/Stellar.Kernel/Stellar.Kernel.csproj"/>
+        <StellarModuleInfo Include="Stellar.Core" Version="[$(StellarCoreVersion)]" Level="Core" Link="Default" Source="Core"
+                           Dependencies="Stellar.Kernel"
+                           ProjectPath="$(StellarRoot)Core/src/Managed/Stellar.Core/Stellar.Core.csproj"/>
+        <StellarModuleInfo Include="Stellar.Runtime" Version="[$(StellarRuntimeVersion)]" Level="Runtime" Link="Default" Source="Core"
+                           Dependencies="Stellar.Kernel"
+                           ProjectPath="$(StellarRoot)Runtime/src/Managed/Stellar.Runtime/Stellar.Runtime.csproj"/>
+    </ItemGroup>
+
+    <Import Project="$(StellarModuleCatalog)"
+            Condition="'$(StellarUseModuleCatalog)' != 'false' and '$(StellarModuleCatalog)' != '' and Exists('$(StellarModuleCatalog)')"/>
+</Project>

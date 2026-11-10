@@ -1,39 +1,32 @@
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
-
+using System.ComponentModel;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using XmlDocMarkdown.Core;
 
-namespace Stellar.CLI.Commands.Project;
+namespace Stellar.Cli.Commands.Project;
 
-public class GenerateProjectCommandData : CommandSettings
+public sealed class GenerateProjectDocsSettings
+    : CommandSettings
 {
-    [CommandArgument(0, "<INPUT>")] public string Input { get; set; }
+    [CommandArgument(0, "<INPUT>")]
+    [Description("The assembly")]
+    public string Input { get; set; } = string.Empty;
 
-    [CommandArgument(1, "<OUTPUT>")] public string Output { get; set; }
+    [CommandArgument(1, "<OUTPUT>")]
+    [Description("The output directory")]
+    public string Output { get; set; } = string.Empty;
 }
 
-public sealed class GenerateProjectDocsCommand : Command<GenerateProjectCommandData>
+public sealed class GenerateProjectDocsCommand
+    : Command<GenerateProjectDocsSettings>
 {
-    public override int Execute(CommandContext context, GenerateProjectCommandData data)
+    public override int Execute(CommandContext context, GenerateProjectDocsSettings settings)
     {
-        AnsiConsole.MarkupLine(
-            $"[green]Generating docs for DLL:[/]  [grey]{data.Input}[/]\n" +
-            $"[green]Output directory:[/] [grey]{data.Output}[/]"
-        );
+        AnsiConsole.MarkupLineInterpolated($"[green]Generating docs for:[/] [grey]{settings.Input}[/]");
+        AnsiConsole.MarkupLineInterpolated($"[green]Output directory:[/] [grey]{settings.Output}[/]");
 
-        IReadOnlyList<string> args = new[] { data.Input, data.Output }
-            .Concat(context.Arguments.Skip(4))
-            .ToArray();
+        IReadOnlyList<string> arguments = [settings.Input, settings.Output, .. context.Remaining.Raw];
 
-        AnsiConsole.Markup("[grey]command: xmldocmd[/]");
-        foreach (var argument in args)
-        {
-            AnsiConsole.Markup($"[grey] {argument}[/]");
-        }
-
-        AnsiConsole.WriteLine();
-
-        return XmlDocMarkdownApp.Run(args);
+        return XmlDocMarkdownApp.Run(arguments);
     }
 }

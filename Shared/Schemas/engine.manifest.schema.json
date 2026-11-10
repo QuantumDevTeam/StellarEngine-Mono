@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "engine.manifest.schema.json",
+  "title": "Stellar engine manifest (manifests/engine.manifest.json)",
+  "description": "How an installation finds its modules, and what it changes in them. Modules describe themselves in <Id>.stellar.module files: the manifest only holds what this installation does differently.",
+  "type": "object",
+  "required": ["SchemaVersion"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "SchemaVersion": { "const": 2 },
+    "OrchesterVersion": {
+      "type": "string",
+      "description": "The Stellar Orchester (Software Kit) release the manifest was made for"
+    },
+    "Discovery": {
+      "type": "object",
+      "description": "Where modules are found automatically",
+      "properties": {
+        "Enabled": { "type": "boolean", "default": true },
+        "Directories": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["modules"],
+          "description": "Folders searched, relative to the root of the installation or absolute"
+        },
+        "Depth": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 2,
+          "description": "1: <folder>/<module>, 2: also <folder>/<group>/<module>"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Modules": {
+      "type": "array",
+      "description": "One entry per module this installation changes",
+      "items": { "$ref": "#/$defs/override" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "override": {
+      "type": "object",
+      "required": ["Id"],
+      "properties": {
+        "Id": { "type": "string" },
+        "Enabled": { "type": "boolean", "description": "false turns the module off without removing it" },
+        "Path": { "type": "string", "description": "The module folder, absolute or relative to the root. Wins over a discovered folder" },
+        "Link": { "enum": ["Default", "Sources", "Package"], "description": "How projects reference the module" },
+        "Version": { "type": "string", "description": "Replaces the version. Required for a module that exists only as a package" },
+        "Level": { "enum": ["CoreModule", "Runtime", "HighLevel", "EndPoint"] },
+        "Description": { "type": "string" },
+        "Project": { "type": "string" },
+        "NativeProjects": { "type": "array", "items": { "type": "string" } },
+        "Dependencies": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+      },
+      "additionalProperties": false
+    }
+  }
+}

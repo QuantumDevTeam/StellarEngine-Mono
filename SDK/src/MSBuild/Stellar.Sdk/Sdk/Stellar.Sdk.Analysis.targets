@@ -1,0 +1,37 @@
+<Project>
+    <!--
+        The analyzers of the engine ship inside the SDK. They read:
+          - the project configuration (.stellar.project) and the module descriptor (.stellar.module), as additional files;
+          - a few properties of the project, made visible to the compiler below;
+          - the StellarModule* assembly metadata of the referenced modules (Stellar.Sdk.Metadata.targets).
+
+        Switch them off with StellarAnalyzers=false. Every rule has its own severity in .editorconfig:
+            dotnet_diagnostic.STLR0201.severity = warning
+        and the .stellar.project / .stellar.module rules can be silenced for one project with
+        StellarAnalyzeConfiguration=false.
+    -->
+    <ItemGroup Condition="'$(StellarAnalyzers)' != 'false' and '$(_StellarIsEngineCore)' != 'true'">
+        <Analyzer Include="$(StellarAnalyzersAssembly)" Condition="'$(StellarAnalyzersAssembly)' != '' and Exists('$(StellarAnalyzersAssembly)')"/>
+        <Analyzer Include="$(MSBuildThisFileDirectory)analyzers/Stellar.Sdk.Analyzers.dll"
+                  Condition="'$(StellarAnalyzersAssembly)' == '' and Exists('$(MSBuildThisFileDirectory)analyzers/Stellar.Sdk.Analyzers.dll')"/>
+    </ItemGroup>
+
+    <!--
+        A file given to the analyzers is an AdditionalFiles item only: the default None glob of Microsoft.NET.Sdk has
+        picked it up already, and an item of both kinds shows twice in the IDE.
+    -->
+    <ItemGroup Condition="'$(StellarAnalyzers)' != 'false' and '$(StellarAnalyzeConfiguration)' != 'false' and '$(_StellarIsTests)' != 'true'">
+        <None Remove="$(StellarProjectConfigurationFile)" Condition="Exists('$(StellarProjectConfigurationFile)')"/>
+        <AdditionalFiles Include="$(StellarProjectConfigurationFile)" Condition="Exists('$(StellarProjectConfigurationFile)')"/>
+        <None Remove="$(StellarModuleDescriptorFile)" Condition="'$(StellarModuleDescriptorFile)' != '' and Exists('$(StellarModuleDescriptorFile)')"/>
+        <AdditionalFiles Include="$(StellarModuleDescriptorFile)" Condition="'$(StellarModuleDescriptorFile)' != '' and Exists('$(StellarModuleDescriptorFile)')"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <CompilerVisibleProperty Include="StellarSdkUsage"/>
+        <CompilerVisibleProperty Include="StellarModuleId"/>
+        <CompilerVisibleProperty Include="StellarIsModule"/>
+        <CompilerVisibleProperty Include="StellarModuleLevel"/>
+        <CompilerVisibleProperty Include="StellarModuleDependencies"/>
+    </ItemGroup>
+</Project>

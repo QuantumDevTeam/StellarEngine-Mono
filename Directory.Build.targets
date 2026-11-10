@@ -1,0 +1,3 @@
+<Project>
+    <Import Project="Shared/Build/Stellar.Core.Build.targets" Condition="'$(StellarIsCoreProject)' == 'true'"/>
+</Project>

@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <!--
+            netstandard2.0 exists only for build-time clients (MSBuild tasks run on .NET Framework inside
+            Visual Studio). Everything that needs `allows ref struct` is runtime-only and stays in net9.0.
+        -->
+        <TargetFrameworks>netstandard2.0;net9.0</TargetFrameworks>
+        <!-- One output folder per framework -->
+        <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
+        <RootNamespace>Stellar.Kernel</RootNamespace>
+
+        <Version>$(StellarKernelVersion)</Version>
+        <AssemblyVersion>$(Version)</AssemblyVersion>
+
+        <IsPackable>true</IsPackable>
+        <PackageId>Stellar.Kernel</PackageId>
+        <Description>StellarEngine Kernel: contracts between design-time, build-time and runtime</Description>
+
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <!-- Runtime-only contracts -->
+    <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+        <Compile Remove="EntryPoint\**\*.cs"/>
+        <Compile Remove="EventSystem\**\*.cs"/>
+        <Compile Remove="Failures\**\*.cs"/>
+        <Compile Remove="JobSystem\**\*.cs"/>
+        <Compile Remove="Lifecycle\**\*.cs"/>
+        <Compile Remove="Threading\**\*.cs"/>
+        <Compile Remove="Timing\**\*.cs"/>
+    </ItemGroup>
+</Project>

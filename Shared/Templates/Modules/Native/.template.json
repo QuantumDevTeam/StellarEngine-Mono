@@ -1,0 +1,4 @@
+{
+  "Description": "A module with a native part: everything of Managed, plus a C++ library on the native core",
+  "Base": "Managed"
+}

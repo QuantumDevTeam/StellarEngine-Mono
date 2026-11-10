@@ -1,0 +1,25 @@
+<Project>
+    <!--
+        Single source of truth for the versions of everything that lives in engine-core.
+        Ships inside Stellar.Sdk, so consumers and tooling agree on the exact component set.
+        Versions are intentional: bump them by hand, never automatically (Docs/Versioning.md).
+    -->
+    <PropertyGroup>
+        <!-- The whole Stellar Software Kit release -->
+        <StellarOrchesterVersion>0.8.0</StellarOrchesterVersion>
+
+        <!-- Components of this repository -->
+        <StellarKernelVersion>0.8.0</StellarKernelVersion>
+        <StellarCoreVersion>0.8.0</StellarCoreVersion>
+        <StellarRuntimeVersion>0.8.0</StellarRuntimeVersion>
+        <StellarToolsVersion>0.3.0</StellarToolsVersion>
+        <StellarSdkVersion>0.4.0</StellarSdkVersion>
+        <StellarCliVersion>0.2.1</StellarCliVersion>
+
+        <!-- Default version of the engine modules (Stellar.Engine and High-Level Modules) -->
+        <StellarEngineVersion>0.8.0</StellarEngineVersion>
+
+        <!-- Native C ABI version: bump on every incompatible change of the exported surface -->
+        <StellarNativeAbiVersion>2</StellarNativeAbiVersion>
+    </PropertyGroup>
+</Project>

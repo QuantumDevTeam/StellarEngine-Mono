@@ -1,61 +1,74 @@
-﻿using Spectre.Console.Cli;
-using Stellar.CLI.Commands;
-using Stellar.CLI.Commands.Project;
-using Stellar.CLI.Commands.Sdk;
-using Stellar.CLI.Commands.Version;
+﻿using Spectre.Console;
+using Spectre.Console.Cli;
+using Stellar.Cli.Commands;
+using Stellar.Cli.Commands.Modules;
+using Stellar.Cli.Commands.Project;
+using Stellar.Cli.Commands.Resources;
+using Stellar.Tools.Diagnostics;
 
 var app = new CommandApp();
 
 app.Configure(config =>
 {
     config.SetApplicationName("stellar");
+    config.PropagateExceptions();
 
     config.AddCommand<InfoCommand>("info")
-        .WithDescription("Show StellarEngine information");
+        .WithDescription("Show the installation");
 
-    config.AddBranch("version", version =>
+    config.AddCommand<VersionCommand>("version")
+        .WithDescription("Show component versions");
+
+    config.AddCommand<DoctorCommand>("doctor")
+        .WithDescription("Check that the installation is healthy");
+
+    config.AddCommand<InstallCommand>("install")
+        .WithDescription("Create or update an installation");
+
+    config.AddBranch("modules", modules =>
     {
-        version.SetDescription("Systems versions");
+        modules.SetDescription("Engine modules");
 
-        version.AddCommand<OrchesterVersionCommand>("orchester")
-            .WithDescription("Tools Version");
+        modules.AddCommand<ListModulesCommand>("list")
+            .WithDescription("List the modules of the installation in load order");
 
-        version.AddCommand<KernelVersionCommand>("kernel")
-            .WithDescription("Kernel Version");
+        modules.AddCommand<SyncModulesCommand>("sync")
+            .WithDescription("Find the modules, apply the manifest, check the rules and regenerate the catalog");
 
-        version.AddCommand<ToolsVersionCommand>("tools")
-            .WithDescription("Tools Version");
+        modules.AddCommand<NewModuleCommand>("new")
+            .WithDescription("Create a module from a template");
 
-        version.AddCommand<SdkVersionCommand>("sdk")
-            .WithDescription("SDK Version");
+        modules.AddCommand<ListModuleTemplatesCommand>("templates")
+            .WithDescription("List the module templates");
 
-        version.AddCommand<SdkVersionCommand>("cli")
-            .WithDescription("SDK Version");
+        modules.AddCommand<AddModuleCommand>("add")
+            .WithDescription("Make a module folder outside modules/ part of the installation");
 
-        version.AddCommand<EngineVersionCommand>("engine")
-            .WithDescription("Engine Version");
-    });
+        modules.AddCommand<ResetModuleCommand>("reset")
+            .WithDescription("Remove what the manifest changes in a module");
 
-    config.AddBranch("sdk", sdk =>
-    {
-        sdk.SetDescription("SDK related commands");
+        modules.AddCommand<EnableModuleCommand>("enable")
+            .WithDescription("Turn a module back on");
 
-        sdk.AddCommand<InstallSdkCommand>("install")
-            .WithDescription("Install Stellar SDK workload");
-    });
+        modules.AddCommand<DisableModuleCommand>("disable")
+            .WithDescription("Turn a module off without removing it");
+
+        modules.AddCommand<BuildModulesCommand>("build")
+            .WithDescription("Build modules with their dependencies: native, managed, tests, packages");
+    }).WithAlias("module");
 
     config.AddBranch("project", project =>
     {
         project.SetDescription("Project related commands");
 
-        project.AddCommand<ProjectInfoCommand>("info")
-            .WithDescription("Show project information");
-
         project.AddCommand<NewProjectCommand>("new")
-            .WithDescription("Create new project from template");
+            .WithDescription("Create a project from a template");
+
+        project.AddCommand<ProjectInfoCommand>("info")
+            .WithDescription("Show what a project selects");
 
         project.AddCommand<GenerateProjectDocsCommand>("generate-docs")
-            .WithDescription("Show project information");
+            .WithDescription("Generate Markdown documentation for an assembly");
 
         project.AddBranch("template", template =>
         {
@@ -65,6 +78,32 @@ app.Configure(config =>
                 .WithDescription("List available project templates");
         });
     }).WithAlias("proj");
+
+    config.AddBranch("resources", resources =>
+    {
+        resources.SetDescription("Resource pipeline");
+
+        resources.AddCommand<CompileResourcesCommand>("compile")
+            .WithDescription("Compile the resources of a project");
+    });
 });
 
-return app.Run(args);
+try
+{
+    return app.Run(args);
+}
+catch (ToolException exception)
+{
+    AnsiConsole.MarkupLineInterpolated($"[red]{exception.Message}[/]");
+    return 1;
+}
+catch (CommandParseException exception)
+{
+    AnsiConsole.MarkupLineInterpolated($"[red]{exception.Message}[/]");
+    return 2;
+}
+catch (CommandRuntimeException exception)
+{
+    AnsiConsole.MarkupLineInterpolated($"[red]{exception.Message}[/]");
+    return 2;
+}

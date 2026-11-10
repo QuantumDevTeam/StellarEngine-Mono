@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "stellar.module.schema.json",
+  "title": "Stellar module descriptor (<Id>.stellar.module)",
+  "description": "The identity of a module in the engine. Only Id is required: everything else has a default, and an entry of manifests/engine.manifest.json may replace any field.",
+  "type": "object",
+  "required": ["Id"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "Id": {
+      "type": "string",
+      "description": "The identifier: also the assembly and the package name. The file must be named <Id>.stellar.module",
+      "pattern": "^[A-Z][A-Za-z0-9]*(\\.[A-Z][A-Za-z0-9]*)+$"
+    },
+    "Version": {
+      "type": "string",
+      "description": "The version of the module and of its package. The engine version when omitted",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+([-+].+)?$"
+    },
+    "Level": {
+      "$ref": "#/$defs/level",
+      "description": "The architectural level: a module depends only on strictly lower levels. HighLevel when omitted"
+    },
+    "Description": {
+      "type": "string",
+      "description": "What the module is for, in one sentence. It becomes the package description"
+    },
+    "Project": {
+      "type": "string",
+      "description": "The managed project, relative to the module folder. When omitted: src/Managed/<Id>/<Id>.csproj, src/<Id>/<Id>.csproj or <Id>.csproj. An empty string: the module has none"
+    },
+    "NativeProjects": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "The native projects in build order, relative to the module folder. When omitted: every .vcxproj under src/Native, then src/NativeInterop"
+    },
+    "TestProjects": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "The test projects, relative to the module folder. When omitted: every .csproj and .vcxproj under tests"
+    },
+    "Repository": {
+      "type": "string",
+      "description": "Where the sources come from"
+    },
+    "Dependencies": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true,
+      "description": "The modules this one depends on. Stellar.Kernel and Stellar.Core are implicit"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "level": {
+      "enum": ["CoreModule", "Runtime", "HighLevel", "EndPoint"]
+    }
+  }
+}

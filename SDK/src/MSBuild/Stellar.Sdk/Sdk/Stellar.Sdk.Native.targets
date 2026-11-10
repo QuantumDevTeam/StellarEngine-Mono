@@ -1,0 +1,67 @@
+<Project>
+    <!--
+        The native side of a managed project.
+
+        1. The wrapper of the native core (see Stellar.Sdk.Wrapper.props). With sources every project references it,
+           since the classes it defines are part of the API of Stellar.Core. With packages it comes inside the
+           Stellar.Core package, which is built on this machine with the wrapper chosen here.
+        2. StellarNativeLibrary items: DLLs copied next to the assembly and packed into runtimes/win-x64/native.
+           A module gets the DLLs of its native projects automatically (Stellar.Sdk.Module.targets).
+    -->
+    <PropertyGroup Condition="'$(PublishAot)' == 'true' and '$(StellarNativeWrapper)' == 'Cli' and '$(_StellarNativeWrapperDefaulted)' == 'true'">
+        <!-- Native AOT cannot host C++/CLI -->
+        <StellarNativeWrapper>Managed</StellarNativeWrapper>
+    </PropertyGroup>
+    <PropertyGroup>
+        <_StellarCliWrapperDir>$(StellarArtifactsBinDir)Stellar.Native.Core.Wrapper.Cli/$(StellarNativeConfiguration)/</_StellarCliWrapperDir>
+        <_StellarReferencesWrapper Condition="'$(StellarSdkUsage)' != '' and '$(StellarPrecompiled)' != 'true' and '$(StellarReferenceNativeWrapper)' != 'false'">true</_StellarReferencesWrapper>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(_StellarReferencesWrapper)' == 'true' and '$(StellarNativeWrapper)' == 'Managed'">
+        <!-- Private: every project gets its own reference, and no package depends on the wrapper project -->
+        <ProjectReference Include="$(StellarRoot)Core/src/NativeInterop/Stellar.Native.Core.Wrapper.Managed/Stellar.Native.Core.Wrapper.Managed.csproj"
+                          PrivateAssets="all"/>
+    </ItemGroup>
+
+    <!-- The C++/CLI wrapper is built by the MSBuild of Visual Studio (scripts/build.ps1), so it is referenced as a file -->
+    <PropertyGroup Condition="'$(_StellarReferencesWrapper)' == 'true' and '$(StellarNativeWrapper)' == 'Cli'">
+        <!-- Mixed-mode assemblies have one architecture, and so does everything that loads them -->
+        <PlatformTarget Condition="'$(PlatformTarget)' == '' or '$(PlatformTarget)' == 'AnyCPU'">x64</PlatformTarget>
+    </PropertyGroup>
+    <ItemGroup Condition="'$(_StellarReferencesWrapper)' == 'true' and '$(StellarNativeWrapper)' == 'Cli'">
+        <Reference Include="Stellar.Native.Core.Wrapper.Cli" HintPath="$(_StellarCliWrapperDir)Stellar.Native.Core.Wrapper.Cli.dll"/>
+        <None Include="$(_StellarCliWrapperDir)Stellar.Native.Core.dll;$(_StellarCliWrapperDir)Ijwhost.dll"
+              Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false"/>
+    </ItemGroup>
+
+    <Target Name="StellarValidateNativeWrapper" BeforeTargets="ResolveAssemblyReferences"
+            Condition="'$(_StellarReferencesWrapper)' == 'true'">
+        <Error Condition="'$(StellarNativeWrapper)' != 'Cli' and '$(StellarNativeWrapper)' != 'Managed'"
+               Text="Unknown StellarNativeWrapper '$(StellarNativeWrapper)': expected Cli or Managed."/>
+        <Error Condition="'$(StellarNativeWrapper)' == 'Cli' and !Exists('$(_StellarCliWrapperDir)Stellar.Native.Core.Wrapper.Cli.dll')"
+               Text="The C++/CLI wrapper is not built: $(_StellarCliWrapperDir). Run scripts/build.ps1 (it needs Visual Studio with C++/CLI support), or build with -p:StellarNativeWrapper=Managed."/>
+        <Error Condition="'$(PublishAot)' == 'true' and '$(StellarNativeWrapper)' == 'Cli'"
+               Text="Native AOT cannot host the C++/CLI wrapper: use StellarNativeWrapper=Managed."/>
+    </Target>
+
+    <!-- Native libraries: next to the assembly, and inside its package -->
+    <!-- Properties are evaluated before items: the target is always registered, and does nothing without libraries -->
+    <PropertyGroup>
+        <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);StellarPackNativeLibraries</TargetsForTfmSpecificContentInPackage>
+    </PropertyGroup>
+
+    <Target Name="StellarCollectNativeLibraries" BeforeTargets="AssignTargetPaths" Condition="'@(StellarNativeLibrary)' != ''">
+        <Warning Condition="!Exists('%(StellarNativeLibrary.FullPath)')"
+                 Text="Native library not built: %(StellarNativeLibrary.FullPath). Build the native projects first ('stellar modules build' does both)."/>
+        <ItemGroup>
+            <None Include="@(StellarNativeLibrary)" Condition="Exists('%(FullPath)')"
+                  Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false"/>
+        </ItemGroup>
+    </Target>
+
+    <Target Name="StellarPackNativeLibraries">
+        <ItemGroup>
+            <TfmSpecificPackageFile Include="@(StellarNativeLibrary)" Condition="Exists('%(FullPath)')" PackagePath="runtimes/win-x64/native/"/>
+        </ItemGroup>
+    </Target>
+</Project>

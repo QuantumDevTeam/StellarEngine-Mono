@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The toolchain of every native project of the engine: the core and native modules alike.
+
+    Import it after Microsoft.Cpp.Default.props. Everything is a default: set a property before the import, or an
+    item definition after it, to change it.
+
+        <Import Project="$(StellarRoot)Shared\Build\Stellar.Native.props"/>
+-->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <Import Project="Stellar.Versions.props" Condition="'$(StellarOrchesterVersion)' == ''"/>
+
+    <PropertyGroup>
+        <!-- This file lives in <root>/Shared/Build -->
+        <StellarRoot Condition="'$(StellarRoot)' == ''">$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)..\..\'))</StellarRoot>
+
+        <!-- Headers of the native Kernel and Core, for #include "include/Kernel/kernel.h" and the like -->
+        <StellarNativeKernelDir>$(StellarRoot)Kernel\src\Native\Stellar.Native.Kernel\</StellarNativeKernelDir>
+        <StellarNativeCoreDir>$(StellarRoot)Core\src\Native\Stellar.Native.Core\</StellarNativeCoreDir>
+
+        <StellarArtifactsName Condition="'$(StellarArtifactsName)' == ''">$(MSBuildProjectName)</StellarArtifactsName>
+    </PropertyGroup>
+
+    <!-- Native binaries go where managed ones do: one artifacts tree, one folder per project and configuration -->
+    <Import Project="Stellar.Artifacts.props" Condition="'$(_StellarArtifactsImported)' != 'true'"/>
+
+    <PropertyGroup>
+        <StellarNativeBinDir Condition="'$(StellarNativeBinDir)' == ''">$(StellarArtifactsBinDir)</StellarNativeBinDir>
+        <StellarNativeObjDir Condition="'$(StellarNativeObjDir)' == ''">$(StellarArtifactsObjDir)</StellarNativeObjDir>
+
+        <PlatformToolset Condition="'$(PlatformToolset)' == ''">v145</PlatformToolset>
+        <CharacterSet Condition="'$(CharacterSet)' == ''">Unicode</CharacterSet>
+        <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+        <WindowsTargetPlatformVersion Condition="'$(WindowsTargetPlatformVersion)' == ''">10.0.26100.0</WindowsTargetPlatformVersion>
+
+        <OutDir>$(StellarNativeBinDir)$(StellarArtifactsName)\$(Configuration)\</OutDir>
+        <IntDir>$(StellarNativeObjDir)$(StellarArtifactsName)\$(Configuration)\</IntDir>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+        <UseDebugLibraries>true</UseDebugLibraries>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)' != 'Debug'">
+        <UseDebugLibraries>false</UseDebugLibraries>
+        <WholeProgramOptimization>true</WholeProgramOptimization>
+    </PropertyGroup>
+
+    <ItemDefinitionGroup>
+        <ClCompile>
+            <LanguageStandard>stdcpp23</LanguageStandard>
+            <LanguageStandard_C>stdc17</LanguageStandard_C>
+            <WarningLevel>Level4</WarningLevel>
+            <ConformanceMode>true</ConformanceMode>
+            <SDLCheck>true</SDLCheck>
+            <ExceptionHandling>Sync</ExceptionHandling>
+            <MultiProcessorCompilation>true</MultiProcessorCompilation>
+            <UseStandardPreprocessor>true</UseStandardPreprocessor>
+            <AdditionalOptions>/utf-8 /Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+            <!-- Exported classes hold standard containers: consumers are built with the same toolset -->
+            <DisableSpecificWarnings>4251;4275;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+            <PreprocessorDefinitions>STELLAR_NATIVE_ABI_VERSION=$(StellarNativeAbiVersion);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+        </ClCompile>
+        <Link>
+            <GenerateDebugInformation>true</GenerateDebugInformation>
+        </Link>
+    </ItemDefinitionGroup>
+
+    <ItemDefinitionGroup Condition="'$(Configuration)' == 'Debug'">
+        <ClCompile>
+            <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+            <Optimization>Disabled</Optimization>
+        </ClCompile>
+    </ItemDefinitionGroup>
+
+    <ItemDefinitionGroup Condition="'$(Configuration)' != 'Debug'">
+        <ClCompile>
+            <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+            <Optimization>MaxSpeed</Optimization>
+            <FunctionLevelLinking>true</FunctionLevelLinking>
+            <IntrinsicFunctions>true</IntrinsicFunctions>
+        </ClCompile>
+        <Link>
+            <EnableCOMDATFolding>true</EnableCOMDATFolding>
+            <OptimizeReferences>true</OptimizeReferences>
+        </Link>
+    </ItemDefinitionGroup>
+
+    <!-- The native settings of the installation (config/, created by 'stellar install') win over the defaults above -->
+    <PropertyGroup>
+        <StellarCustomNativeProps Condition="'$(StellarCustomNativeProps)' == ''">$(StellarRoot)config\Stellar.Native.props</StellarCustomNativeProps>
+    </PropertyGroup>
+    <Import Project="$(StellarCustomNativeProps)" Condition="Exists('$(StellarCustomNativeProps)')"/>
+</Project>

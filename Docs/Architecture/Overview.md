@@ -49,10 +49,10 @@ The engine modules are provided by 4 main levels (where 0 is the Kernel):
 0) Kernel - see above
 1) Core module - the first module that serves as the core of the entire system.
 2) Core modules - several separate systems divided into independent modules
-3) RuntimeSystem - a system that controls the behavior of the engine during execution
+3) Stellar.Runtime - a system that controls the behavior of the engine during execution
 4) High-Level modules - the main modules representing the main API
    Each of these levels can only communicate directly with the lower ones, i.e. Core cannot access Stellar.Graphic.
-   The only exception is Stellar.RuntimeSystem due to the specifics of its basic concept.
+   The only exception is Stellar.Runtime due to the specifics of its basic concept.
 
 ## Engine
 
@@ -61,25 +61,24 @@ of the engine and its main cycle.
 
 ## Tools
 
-This is a binary library that knows about contracts and knows how to work with them, for example, creating its own interfaces based on them.
-At the moment, Tools has a weak implementation, but in the future it will have such as:
+The library with the logic of everything that runs outside of a game, see [Tools](Tools.md). It knows the contracts and
+works with them:
 
-- Generation of configuration files and monitoring of their status, for example key-bindings
-- Asset assembly (the part of the AssetPipeline responsible for this)
-- other small algorithms running during development
+- The layout of an installation, the engine manifest and the module graph
+- Project configuration and templates
+- The resource pipeline, the part of the AssetPipeline that compiles sources into the engine format
+- The runtime configuration and the launcher
 
 ## CLI
 
-Simple .NET tools wrapper on top of Tools
+A simple .NET tool, a thin wrapper on top of Tools.
 
 ## SDK
 
-Complex wrapper on top .NET 9.0 SDK. This part of the SSK is used to simplify the project build, allowing you to automatically
-connect the necessary set of modules and libraries, while simplifying versioning and standard generation for runtime.\
-The SDK also includes the Roslyn analyzer, which is also poorly implemented at this stage. His responsibility is to simplify
-the work with the engine and keep the code clean.
-In addition to the analyzer, it is planned to add a generator. In the future, it can help with the generation of a launcher for your
-program or with the integration of C# scripts.
+A wrapper on top of the .NET SDK, see [SDK](Sdk.md). It simplifies the project build by connecting the necessary set of
+modules and libraries, against sources in Debug and against the local NuGet feed in Release.\
+The SDK also includes the Roslyn analyzer, which keeps the code that works with the engine correct.
+In the future a source generator can help with the integration of C# scripts.
 
 ## Editor
 

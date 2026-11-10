@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "stellar.project.schema.json",
+  "title": "Stellar project configuration (.stellar.project)",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "Project": {
+      "type": "object",
+      "properties": {
+        "StellarEntryPoint": {
+          "type": "string",
+          "description": "Full type name of the entry point, or \"default\" for {AssemblyName}.EntryPoint"
+        },
+        "Assets": {
+          "type": "object",
+          "description": "Files copied or embedded as they are. All lists are glob patterns relative to the project",
+          "properties": {
+            "Include": { "$ref": "#/$defs/patterns" },
+            "Exclude": { "$ref": "#/$defs/patterns" },
+            "Embedded": { "$ref": "#/$defs/patterns" }
+          },
+          "additionalProperties": false
+        },
+        "Resources": {
+          "type": "object",
+          "description": "Files compiled into the engine format",
+          "properties": {
+            "Include": { "$ref": "#/$defs/patterns" },
+            "Exclude": { "$ref": "#/$defs/patterns" },
+            "Compilers": {
+              "type": "array",
+              "description": "Assemblies with additional resource compilers, relative to the project",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": false
+        },
+        "Localizations": {
+          "type": "object",
+          "properties": {
+            "DefaultCulture": { "type": "string" },
+            "Cultures": { "type": "array", "items": { "type": "string" } },
+            "IndexFiles": { "$ref": "#/$defs/patterns" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "Runtime": {
+      "type": "object",
+      "description": "The settings of the runtime, and free-form values for modules: they reach RuntimeConfiguration.Settings. The command line (--stellar:Name=Value) wins over them",
+      "properties": {
+        "MainLoop": { "type": ["boolean", "string"], "default": true, "description": "Whether the main loop runs. false: the engine stops as soon as the application has started" },
+        "TargetFrameRate": { "type": ["number", "string"], "default": 0, "description": "Frames per second the main loop aims at, 0 for as fast as possible" },
+        "MaxDeltaTime": { "type": ["number", "string"], "default": 0.25, "description": "The longest time step a frame reports, in seconds" },
+        "MaxFrames": { "type": ["integer", "string"], "default": 0, "description": "Stop after this many frames, 0 for never" },
+        "FixedTimeStep": { "type": ["number", "string"], "default": 0.016666666666666666, "description": "The fixed step of the engine clock, in seconds. 0: one fixed update per frame" },
+        "MaxFixedSteps": { "type": ["integer", "string"], "default": 8, "description": "The most fixed steps a participant runs in one frame" },
+        "CollectibleModules": { "type": ["boolean", "string"], "default": true, "description": "Whether the contexts of modules can be unloaded" },
+        "ModuleInitializationParallelism": { "type": ["integer", "string"], "default": 1, "description": "How many modules of one level start at once" },
+        "Verbose": { "type": ["boolean", "string"], "default": false, "description": "Whether the runtime tells every step on the error output" }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "patterns": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

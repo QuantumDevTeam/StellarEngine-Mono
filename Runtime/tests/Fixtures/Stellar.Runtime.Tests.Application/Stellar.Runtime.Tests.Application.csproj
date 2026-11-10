@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <!--
+        A stand-in for a game in the tests of the runtime: depends on the host module, has a runtime configuration
+        in a file next to it, takes part in the main loop.
+    -->
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="$(StellarRoot)Kernel/src/Managed/Stellar.Kernel/Stellar.Kernel.csproj"/>
+        <ProjectReference Include="$(StellarRoot)Runtime/tests/Fixtures/Stellar.Runtime.Tests.Host/Stellar.Runtime.Tests.Host.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="Stellar.Runtime.Tests.Application.stellar.runtime.config.json" CopyToOutputDirectory="PreserveNewest"/>
+        <AssemblyAttribute Include="Stellar.Kernel.Configuration.StellarRuntimeConfigurationAttribute">
+            <_Parameter1>Stellar.Runtime.Tests.Application.stellar.runtime.config.json</_Parameter1>
+            <_Parameter2>External</_Parameter2>
+        </AssemblyAttribute>
+    </ItemGroup>
+</Project>

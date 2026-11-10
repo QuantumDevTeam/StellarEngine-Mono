@@ -1,141 +1,110 @@
 # StellarEngine
 
-Licensed under PolyForm Noncommercial 1.0.0\
-StellarEngine may include contributions from external community
-contributors under the terms described in CLA.md.
+Licensed under PolyForm Noncommercial 1.0.0. See [LICENSE.md](LICENSE.md) and [CLA.md](CLA.md).
 
-![Logo](Data/Logo.ico)
+<img alt="Logo" height="256" src="Shared/Branding/Logo.png" width="256"/>
 
-StellarEngine is a hypermodular game engine designed with a bottom-up 
-architectural philosophy.
+The core of [StellarEngine](Docs/Architecture.md), a hypermodular game engine: the contracts, the basic concepts and the
+tooling every other part of the engine stands on.
 
-The engine treats modules as first-class system components rather than 
-rigidly separated layers (runtime, editor,
-tools). This allows engine modules to be embedded across different 
-contexts: inside games, editors, tooling pipelines,
-installers, and custom workflows.
+A checkout of this repository is the root of an installation (`$STELLAR_ROOT`): the core lies right there, and the
+modules, the local feed, the manifests and the games are added next to it. It depends on nothing else from the
+engine, and it builds from a clean clone.
 
-StellarEngine is developed as a long-term product, while openly 
-embracing research-and-development driven evolution.
+## What is here
 
----
+| Path | Project | What it is |
+|---|---|---|
+| `Kernel/src/Managed` | `Stellar.Kernel` | Managed contracts: how the engine is used |
+| `Kernel/src/Native` | `Stellar.Native.Kernel` | Native contracts: what modules implement, and the C ABI |
+| `Core/src/Managed` | `Stellar.Core` | Quants, data containers, rosters, failures, entry points: the managed logic |
+| `Core/src/Native` | `Stellar.Native.Core` | The native core: identifiers, labels, registries, containers, collections, modules |
+| `Core/src/NativeInterop` | `Stellar.Native.Core.Wrapper.Cli` | The Windows wrapper of the native core, in C++/CLI |
+| | `Stellar.Native.Core.Wrapper.Managed` | The portable wrapper of the native core, in C# |
+| | `Stellar.Native.Core.Wrapper.PInvoke` | The flat exports the portable wrapper calls |
+| `Runtime/src/Managed` | `Stellar.Runtime` | Starts and stops the engine: configuration, module loading, the main loop |
+| `SDK/src/MSBuild` | `Stellar.Sdk` | The MSBuild SDK modules and games are built with |
+| | `Stellar.Sdk.Tasks` | MSBuild tasks, thin wrappers over Tools |
+| `SDK/src/Roslyn` | `Stellar.Sdk.Analyzers` | The analyzers of the engine |
+| `SDK/src` | `Stellar.Tools` | The logic of everything that runs outside of a game |
+| | `Stellar.Cli` | The `stellar` command, a thin wrapper over Tools |
+| `*/tests` | | Managed and native tests, next to what they test |
+| `Shared` | | Build files, JSON schemas and templates the core and the modules share |
 
-## Core Concept: Hypermodular Architecture
+## Installing
 
-StellarEngine is built around a **hypermodular**, **bottom-up** 
-architecture.
+You need the .NET 9 SDK, and Visual Studio 2026 with the C++ workload for the native part.
 
-Instead of enforcing strict boundaries between runtime, editor, and 
-tooling layers, StellarEngine allows modules to be
-reused and embedded freely across system contexts.
+```bash
+git clone <StellarEngine-Core> StellarEngine
+cd StellarEngine
+powershell -File scripts/build.ps1 -Configuration Release -Install
+```
 
-This design enables:
+The checkout becomes the installation: `modules/`, `packages/`, `manifests/`, `config/`, `projects/` and `tools/` are
+created next to the sources, and git ignores them. See [the layout](Docs/Architecture/Repository.md).
 
-* Using runtime engine modules directly inside editor tooling
-* Embedding editor UI widgets directly into games
-* Building standalone tools (installers, debuggers, pipelines) using 
-engine modules
-* Composing products from the same technological foundation
+## Building
 
-Modules may appear reusable in unexpected contexts. This is 
-intentional.
+```bash
+powershell -File scripts/build.ps1
+```
 
----
+| Option | Effect |
+|---|---|
+| `-Configuration Release` | Release build, Debug by default |
+| `-SkipNative` | Managed part only, for machines with no C++ toolchain: only the `Managed` wrapper |
+| `-Wrapper Cli\|Managed` | The wrapper `Stellar.Core` is packed with, the one the SDK picks by default |
+| `-SkipTests` | Does not run the tests |
+| `-Pack` | Also fills the local feed, `packages/` |
+| `-Install` | Also runs `stellar install` here; implies `-Pack` |
+| `-NoUserRegistration` | With `-Install`: do not write the per-user pointer `~/.stellar` |
 
-## Project Vision
+`StellarEngine-Core.sln` opens everything in Visual Studio or Rider. `dotnet` cannot build C++ projects, so from the
+command line use `StellarEngine-Core.Managed.slnf` for the managed part. The managed tests run once per wrapper of the
+native core; see [Native core](Docs/Architecture/NativeAbi.md).
 
-StellarEngine is developed and maintained by QuantumDevTeam as a 
-long-term technology platform.
+`scripts/test-sdk.ps1` is the end-to-end check: a copy of the checkout is built and installed in a sandbox, gets a
+managed and a native module from the templates and a game on top of them, built against sources and against packages,
+once per wrapper. Nothing outside the sandbox is touched.
 
-StellarEngine aims to become a flexible technological foundation for 
-building games, tools, and interactive systems.
+## Modules
 
-The engine is not designed as a fixed framework, but as a composable 
-system where architecture grows from practical
-usage rather than predefined top-down constraints.
+```bash
+dotnet stellar modules new Managed Stellar.Logging --level CoreModule
+dotnet stellar modules build --tests --pack
+```
 
----
-
-## Current Status
-
-StellarEngine is currently in an early development stage.
-
-* APIs are unstable
-* Architecture is actively evolving
-* Breaking changes are expected
-
-The project is not yet production-ready, but is actively shaped 
-toward a minimal viable engine foundation.
-
----
-
-## Repository Structure
-
-This repository contains the core engine sources, experimental 
-modules, documentation, and development policies.
-
-Detailed architectural structure will evolve as the engine matures.
-
----
+A module is a folder with a `.stellar.module` file under `modules/`, or anywhere with `stellar modules add`. Its
+project is nearly empty: the SDK takes its kind, version and dependencies from the descriptor, and everything it does by
+itself can be switched off or replaced. See [Modules](Docs/Architecture/Modules.md).
 
 ## Documentation
 
-License and Contributing. See these documents before submitting contributions.
-
-- [License](LICENSE)
-- [Contributing Guide](CONTRIBUTING.md)
-- [Contributor License Agreement (CLA)](CLA.md)
-
 Architecture:
 
-- [Architecture Overview](Docs/Architecture/Overview.md)
-- [Architecture Core](Docs/Architecture/Core.md)
-- [Pipeline Overview](Docs/Architecture/Pipeline.md)
+- [Philosophy](Docs/Architecture.md) and [design philosophy](Docs/DesignPhilosophy.md)
+- [Overview](Docs/Architecture/Overview.md), [levels of the engine](Docs/Architecture/Core.md), [pipeline](Docs/Architecture/Pipeline.md)
+- [Layout of this repository and of an installation](Docs/Architecture/Repository.md)
+- [Modules: how they are found, built, referenced and checked](Docs/Architecture/Modules.md)
+- [SDK: how projects are built](Docs/Architecture/Sdk.md)
+- [Runtime: how an application starts, runs its frames and stops](Docs/Architecture/Runtime.md)
+- [Tools: the resource pipeline and how to extend it](Docs/Architecture/Tools.md)
+- [Native core: its C++ API, the two wrappers and the C ABI](Docs/Architecture/NativeAbi.md)
 
-Philosophy
+Formats:
 
-- [Architecture Philosophy](Docs/Architecture.md)
-- [Design Philosophy](Docs/DesignPhilosophy.md)
+- [`.stellar.project`](Docs/Formats/ProjectFile.md)
+- [`.stellar.module`](Docs/Formats/ModuleDescriptor.md)
+- [`engine.manifest.json`](Docs/Formats/EngineManifest.md)
+- [`.sres` resource container](Docs/Formats/ResourceContainer.md)
 
-Workflow Policy:
+Reference:
 
-- [Git & Workflow Policy](Docs/GitPolicy.md)
-- [Versioning Strategy](Docs/Versioning.md)
+- [Every property and item of Stellar.Sdk](Docs/Reference/Sdk.Properties.md)
+- [Analyzer rules and build checks](Docs/Reference/Diagnostics.md)
 
----
+Workflow:
 
-## License
-
-StellarEngine is licensed under the 
-PolyForm Noncommercial License 1.0.0.
-
-You may use, study, modify, and distribute the engine for 
-noncommercial purposes under the terms of the license.
-
-Commercial use of StellarEngine or derivative works is prohibited 
-without explicit written permission from the project
-owner.
-
-Official license text:
-https://polyformproject.org/licenses/noncommercial/1.0.0/
-
-See [LICENSE](LICENSE) for full terms.
-
----
-
-### Commercial Licensing
-
-Future commercial licensing options may become available as 
-StellarEngine approaches production readiness.
-
-If you are interested in commercial usage, integration, or 
-partnership opportunities, please contact QuantumDevTeam.
-
----
-
-## Disclaimer
-
-StellarEngine is an evolving system. Some components may be 
-experimental, incomplete, or subject to redesign.
-
-This is a deliberate part of the engine's development philosophy.
+- [Contributing](CONTRIBUTING.md), [Git policy](Docs/GitPolicy.md), [versioning](Docs/Versioning.md)
+- [Migrating modules to 0.8](Docs/Migration-0.8.md)
