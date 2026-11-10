@@ -1,0 +1,9 @@
+{
+  "solution": {
+    "path": "StellarEngine.sln",
+    "projects": [
+      "Core\\src\\Managed\\Stellar.Core\\Stellar.Core.csproj",
+      "Kernel\\src\\Managed\\Stellar.Kernel\\Stellar.Kernel.csproj"
+    ]
+  }
+}
