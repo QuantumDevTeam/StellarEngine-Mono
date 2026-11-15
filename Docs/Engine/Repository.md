@@ -176,6 +176,21 @@ The workflow tells the mirror by the `.orchestra` file `scripts/mirror.ps1` puts
 commits and the repositories it was made of): there it runs `scripts/orchestra-site.ps1`, which writes
 `docfx.orchestra.json`, and builds that instead of `docfx.json`.
 
+### Releases
+
+A release starts as a decision: a new `StellarOrchesterVersion` in `Shared/Build/Stellar.Versions.props`, by hand
+([Versioning](Versioning.md)), along with the versions of the components that changed. Then:
+
+1. a push of that version to `master` of the core: `.github/workflows/release.yml` sees a version without a tag, tags
+   the commit `v<version>` and publishes a GitHub release of the core with the versions of its components;
+2. the next run of the mirror (`.github/workflows/mirror.yml`, nightly or Run workflow; at once with the secret
+   `STELLAR_DISPATCH_TOKEN` in the core) makes a snapshot with the new core, sees the same version without a tag in
+   the mirror, tags the snapshot `v<version>` and publishes the release of the orchestra: every component, its
+   version and its commit;
+3. the installer installs the latest release by default: it reads `.orchestra` at that tag.
+
+A version with a suffix (`0.9.0-rc.1`) is a pre-release, which the installer takes only when asked for by name.
+
 ### The mirror regenerates itself
 
 `.github/workflows/mirror.yml` runs in the mirror (where the repository variable `STELLAR_MIRROR` is `true`) every

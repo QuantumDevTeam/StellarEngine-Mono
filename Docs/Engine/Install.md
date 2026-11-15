@@ -27,19 +27,28 @@ Piped into `iex`, a script gets no parameters, so every option is also an enviro
 | Parameter | Variable | Default |
 |---|---|---|
 | `-Path` | `STELLAR_INSTALL_PATH` | `~/StellarEngine` |
-| `-Ref` | `STELLAR_INSTALL_REF` | `master`; a tag installs a release |
-| `-Modules` | `STELLAR_INSTALL_MODULES` | none; names in the organization of the core, URLs or local paths, comma separated |
+| `-Version` | `STELLAR_INSTALL_VERSION` | `latest`, the latest release; `0.8.1` installs that one, `master` the last snapshot of the mirror |
+| `-Modules` | `STELLAR_INSTALL_MODULES` | none; modules beyond the orchestra: names in the organization of the core, URLs or local paths, comma separated |
 | `-Configuration` | `STELLAR_INSTALL_CONFIGURATION` | `Release` |
-| `-Repository` | `STELLAR_INSTALL_REPOSITORY` | StellarEngine-Core of QuantumDevTeam |
+| `-Mirror` | `STELLAR_INSTALL_MIRROR` | `QuantumDevTeam/StellarEngine-Mono` |
 | `-CheckOnly` | | only checks the toolchain |
 
 With parameters:
 
 ```powershell
-& ([scriptblock]::Create((irm https://quantumdevteam.github.io/StellarEngine-Core/install.ps1))) -Path D:\StellarEngine -Modules Stellar.FileSystem
+& ([scriptblock]::Create((irm https://quantumdevteam.github.io/StellarEngine-Core/install.ps1))) -Path D:\StellarEngine -Version 0.8.1
 ```
 
-Running it again over the same folder updates the core and installs it again.
+## What a version is
+
+A version of StellarEngine is a release of the mirror: its tag `v<version>` holds `.orchestra`, the descriptor of the
+orchestra, which names the repository, the version and the commit of the core and of every module. The installer
+reads it and installs exactly that, so there is no list of modules to give: the core and every module are cloned and
+put at their commits (`git switch <branch>` in one of them to work on it). A module in a repository this machine
+cannot read (a private one) is skipped with a warning.
+
+Running it again over the same folder moves the core and the modules to the commits of the version asked for, and
+installs again. A component with uncommitted changes stops it.
 
 ## After the install
 

@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
-    Installs StellarEngine on a developer machine: checks the toolchain, clones the core, builds and installs it,
-    fetches the modules.
+    Installs a version of StellarEngine on a developer machine: checks the toolchain, reads what the orchestra of that
+    version is made of, clones the core and every module at their commits, builds and installs it.
 
 .DESCRIPTION
     The one file a machine needs to get the engine. Served from a web server or GitHub Pages:
@@ -10,10 +10,14 @@
 
     or, with options:
 
-        & ([scriptblock]::Create((irm https://<host>/install.ps1))) -Path D:\StellarEngine -Modules Stellar.FileSystem
+        & ([scriptblock]::Create((irm https://<host>/install.ps1))) -Path D:\StellarEngine -Version 0.8.1
+
+    A version of StellarEngine is a release of the mirror (StellarEngine-Mono): the tag v<version> holds .orchestra,
+    the descriptor of the orchestra, with the repository and the commit of the core and of every module. The installer
+    reads it and installs exactly that; no list of modules to give.
 
     Piped into iex a script gets no parameters, so every option also reads an environment variable
-    (STELLAR_INSTALL_PATH, STELLAR_INSTALL_REF, ...). Nothing is installed into the system by this script: missing
+    (STELLAR_INSTALL_PATH, STELLAR_INSTALL_VERSION, ...). Nothing is installed into the system by this script: missing
     tools are reported with the command that installs them. The installation itself is scripts/build.ps1 -Install of
     the core (registration in ~/.stellar, the 'stellar' command), undone by scripts/build.ps1 -Uninstall.
 
@@ -21,15 +25,17 @@
     Where the engine goes: the checkout of the core is the root of the installation. $STELLAR_INSTALL_PATH, or
     ~/StellarEngine.
 
-.PARAMETER Repository
-    The core. $STELLAR_INSTALL_REPOSITORY, or StellarEngine-Core of QuantumDevTeam.
+.PARAMETER Version
+    The version of StellarEngine: 0.8.1 or v0.8.1, 'latest' (the latest release, the default), or 'master' (the last
+    snapshot of the mirror, released or not). $STELLAR_INSTALL_VERSION.
 
-.PARAMETER Ref
-    The branch or tag of the core: a tag is a release. $STELLAR_INSTALL_REF, or master.
+.PARAMETER Mirror
+    The mirror the versions are read from, owner/name on GitHub. $STELLAR_INSTALL_MIRROR, or
+    QuantumDevTeam/StellarEngine-Mono.
 
 .PARAMETER Modules
-    Modules to clone into modules/<Module>/, by name in the organization of the core or as full git URLs.
-    $STELLAR_INSTALL_MODULES, comma separated. Later the orchestra will list them itself.
+    Modules beyond the orchestra, cloned at their default branch into modules/<Module>/: names in the organization
+    of the core, git URLs or local repositories. $STELLAR_INSTALL_MODULES, comma separated.
 
 .PARAMETER Configuration
     Debug or Release. $STELLAR_INSTALL_CONFIGURATION, or Release.
@@ -39,8 +45,8 @@
 #>
 param(
     [string]$Path = $env:STELLAR_INSTALL_PATH,
-    [string]$Repository = $env:STELLAR_INSTALL_REPOSITORY,
-    [string]$Ref = $env:STELLAR_INSTALL_REF,
+    [string]$Version = $env:STELLAR_INSTALL_VERSION,
+    [string]$Mirror = $env:STELLAR_INSTALL_MIRROR,
     [string[]]$Modules = @(),
     [string]$Configuration = $env:STELLAR_INSTALL_CONFIGURATION,
     [switch]$CheckOnly
@@ -48,12 +54,12 @@ param(
 
 # Everything runs inside a function: piped into iex, an 'exit' would close the shell of the user
 function Install-StellarEngine {
-    param($Path, $Repository, $Ref, $Modules, $Configuration, $CheckOnly)
+    param($Path, $Version, $Mirror, $Modules, $Configuration, $CheckOnly)
 
     $ErrorActionPreference = 'Stop'
     if (-not $Path) { $Path = Join-Path $HOME 'StellarEngine' }
-    if (-not $Repository) { $Repository = 'https://github.com/QuantumDevTeam/StellarEngine-Core.git' }
-    if (-not $Ref) { $Ref = 'master' }
+    if (-not $Version) { $Version = 'latest' }
+    if (-not $Mirror) { $Mirror = 'QuantumDevTeam/StellarEngine-Mono' }
     if (-not $Configuration) { $Configuration = 'Release' }
     if ($Modules.Count -eq 0 -and $env:STELLAR_INSTALL_MODULES) {
         $Modules = $env:STELLAR_INSTALL_MODULES -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ }
@@ -128,31 +134,66 @@ function Install-StellarEngine {
         return
     }
 
+    # ---- The orchestra ----
+    Write-Title 'The orchestra'
+    $headers = @{ 'User-Agent' = 'stellar-installer' }
+    $ref = switch -Regex ($Version) {
+        '^latest$' {
+            try { (Invoke-RestMethod "https://api.github.com/repos/$Mirror/releases/latest" -Headers $headers).tag_name }
+            catch {
+                Write-Host '  No release of StellarEngine yet: installing the last snapshot of the mirror' -ForegroundColor Yellow
+                'master'
+            }
+        }
+        '^(master|head)$' { 'master' }
+        '^v' { $Version }
+        default { "v$Version" }
+    }
+    try { $descriptor = Invoke-RestMethod "https://raw.githubusercontent.com/$Mirror/$ref/.orchestra" -Headers $headers }
+    catch { throw "No StellarEngine $Version`: $Mirror has no .orchestra at '$ref'" }
+    if ($descriptor -is [string]) { $descriptor = $descriptor | ConvertFrom-Json }
+
+    $components = @($descriptor.Components)
+    $core = $components | Where-Object { -not $_.Area } | Select-Object -First 1
+    if (-not $core) { throw "The orchestra at '$ref' of $Mirror names no core" }
+    $label = if ($descriptor.Orchestra) { $descriptor.Orchestra } else { $ref }
+    Write-Host "  StellarEngine $label ($Mirror at $ref)"
+    foreach ($component in $components) {
+        $where = if ($component.Area) { "$($component.Area)/$($component.Name)" } else { '(root)' }
+        Write-Host ('    {0,-28} {1,-10} {2}  {3}' -f $component.Name, $component.Version, "$($component.Commit)".Substring(0, 10), $where)
+    }
+
+    # Clones a component, or updates the clone that is there, and puts it at its commit of the orchestra
+    function Sync-Component([string]$Name, [string]$Url, [string]$Target, [string]$Commit) {
+        if (Test-Path (Join-Path $Target '.git')) {
+            if (& git -C $Target status --porcelain --untracked-files=no) {
+                throw "$Name has uncommitted changes in $Target`: commit or stash them first"
+            }
+            & git -C $Target fetch --quiet --tags origin
+            if ($LASTEXITCODE -ne 0) { throw "git fetch of $Name failed" }
+        }
+        else {
+            # No prompt for a repository this machine cannot read: stored credentials work, a login window never opens
+            $env:GIT_TERMINAL_PROMPT = '0'
+            & git -c credential.interactive=never clone --quiet $Url $Target
+            if ($LASTEXITCODE -ne 0) { return $false }
+        }
+        if ($Commit) {
+            # A commit of the orchestra, not a branch: what this version is made of (git switch <branch> to work on it)
+            & git -C $Target -c advice.detachedHead=false checkout --quiet $Commit
+            if ($LASTEXITCODE -ne 0) { throw "$Name has no commit $Commit in $Url`: was it pushed?" }
+        }
+        return $true
+    }
+
     # ---- The core ----
-    Write-Title "The core: $Repository ($Ref)"
+    Write-Title "The core: $($core.Repository)"
     $Path = [System.IO.Path]::GetFullPath($Path)
     $isCore = Test-Path (Join-Path $Path 'Shared/Build/Stellar.Versions.props')
-
-    if ($isCore -and (Test-Path (Join-Path $Path '.git'))) {
-        Write-Host "  $Path holds the core already: updating it"
-        & git -C $Path fetch --tags --quiet origin
-        if ($LASTEXITCODE -ne 0) { throw 'git fetch failed' }
-        & git -C $Path checkout --quiet $Ref
-        if ($LASTEXITCODE -ne 0) { throw "git checkout $Ref failed: commit or stash your changes in $Path first" }
-        # A branch moves on; a tag stays where it is
-        $onBranch = (& git -C $Path rev-parse --abbrev-ref HEAD) -ne 'HEAD'
-        if ($onBranch) {
-            & git -C $Path pull --ff-only --quiet
-            if ($LASTEXITCODE -ne 0) { throw "git pull failed: $Path has commits of its own on $Ref" }
-        }
-    }
-    elseif ((Test-Path $Path) -and (Get-ChildItem $Path -Force | Select-Object -First 1)) {
+    if (-not $isCore -and (Test-Path $Path) -and (Get-ChildItem $Path -Force | Select-Object -First 1)) {
         throw "$Path exists and is not a checkout of the core: choose another -Path"
     }
-    else {
-        & git clone --quiet --branch $Ref $Repository $Path
-        if ($LASTEXITCODE -ne 0) { throw "git clone of $Repository ($Ref) failed" }
-    }
+    if (-not (Sync-Component $core.Name $core.Repository $Path $core.Commit)) { throw "git clone of $($core.Repository) failed" }
     Write-Host "  $Path at $(& git -C $Path rev-parse --short HEAD)"
 
     # ---- Build and install ----
@@ -162,25 +203,31 @@ function Install-StellarEngine {
     if (-not $?) { throw 'scripts/build.ps1 failed' }
 
     # ---- Modules ----
-    if ($Modules.Count -gt 0) {
-        Write-Title 'Modules'
-        $organization = $Repository -replace '/[^/]+?(\.git)?$', ''
+    $skipped = [System.Collections.Generic.List[string]]::new()
+    $others = @($components | Where-Object { $_.Area })
+    if ($others.Count -gt 0 -or $Modules.Count -gt 0) {
+        Write-Title 'Modules and tools'
+        foreach ($component in $others) {
+            $target = Join-Path $Path "$($component.Area)/$($component.Name)"
+            if (Sync-Component $component.Name $component.Repository $target $component.Commit) {
+                Write-Host "  $($component.Name) $($component.Version)"
+            }
+            else {
+                # A private repository this machine cannot read: the rest of the orchestra works without it
+                Write-Host "  $($component.Name) skipped: $($component.Repository) cannot be cloned (private?)" -ForegroundColor Yellow
+                $skipped.Add($component.Name)
+            }
+        }
+
+        # Beyond the orchestra: at their default branch
+        $organization = $core.Repository -replace '/[^/]+?(\.git)?$', ''
         foreach ($module in $Modules) {
             # A URL, a local repository, or a name in the organization of the core
             $url = if ($module -match '^(https?://|git@)' -or (Test-Path $module)) { $module } else { "$organization/$module.git" }
             # Only .git goes: module names have dots of their own (Stellar.FileSystem)
             $name = ($url.TrimEnd('/', '\') -split '[/\\]')[-1] -replace '\.git$', ''
-            $target = Join-Path $Path "modules/$name"
-
-            if (Test-Path (Join-Path $target '.git')) {
-                & git -C $target pull --ff-only --quiet
-                Write-Host "  $name updated"
-            }
-            else {
-                & git clone --quiet $url $target
-                if ($LASTEXITCODE -ne 0) { throw "git clone of $url failed" }
-                Write-Host "  $name cloned"
-            }
+            if (-not (Sync-Component $name $url (Join-Path $Path "modules/$name") '')) { throw "git clone of $url failed" }
+            Write-Host "  $name (beyond the orchestra)"
         }
 
         & dotnet (Get-ChildItem (Join-Path $Path 'artifacts/bin/Stellar.Cli') -Recurse -Filter 'Stellar.Cli.dll' |
@@ -188,7 +235,9 @@ function Install-StellarEngine {
     }
 
     # ---- Done ----
-    Write-Host "`nStellarEngine is installed in $Path" -ForegroundColor Green
+    Write-Host "`nStellarEngine $label is installed in $Path" -ForegroundColor Green
+    if ($skipped.Count -gt 0) { Write-Host "  Not installed (no access): $($skipped -join ', ')" -ForegroundColor Yellow }
+    Write-Host '  The core and the modules are at the commits of this version: git switch <branch> in one to work on it.'
     Write-Host '  Open a new terminal for the stellar command, then:'
     Write-Host '    stellar info'
     Write-Host '    stellar modules new Managed <Module>'
@@ -197,7 +246,7 @@ function Install-StellarEngine {
 }
 
 try {
-    Install-StellarEngine -Path $Path -Repository $Repository -Ref $Ref -Modules $Modules `
+    Install-StellarEngine -Path $Path -Version $Version -Mirror $Mirror -Modules $Modules `
         -Configuration $Configuration -CheckOnly:$CheckOnly
 }
 catch {

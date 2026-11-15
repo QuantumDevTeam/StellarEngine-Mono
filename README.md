@@ -36,15 +36,16 @@ engine, and it builds from a clean clone.
 You need Git, the .NET 9 SDK (9.0.300 or later) and Visual Studio with the C++ workload. C++/CLI support is optional:
 without it the engine uses the P/Invoke wrapper of the native core.
 
-The installer checks all of that, tells how to get what is missing, then clones, builds and installs the core:
+The installer checks all of that, tells how to get what is missing, then installs the latest release of StellarEngine:
+it reads what that version of the orchestra is made of (`.orchestra` of the mirror) and clones the core and every
+module at their commits, builds and installs them:
 
 ```powershell
-irm https://<host>/install.ps1 | iex
+irm https://quantumdevteam.github.io/StellarEngine-Core/install.ps1 | iex
 ```
 
-Options go through the environment when piped (`STELLAR_INSTALL_PATH`, `STELLAR_INSTALL_REF`,
-`STELLAR_INSTALL_MODULES`), or as parameters:
-`& ([scriptblock]::Create((irm https://<host>/install.ps1))) -Path D:\StellarEngine -Modules Stellar.FileSystem`.
+Options go through the environment when piped (`STELLAR_INSTALL_PATH`, `STELLAR_INSTALL_VERSION`), or as parameters:
+`& ([scriptblock]::Create((irm https://quantumdevteam.github.io/StellarEngine-Core/install.ps1))) -Path D:\StellarEngine -Version 0.8.1`.
 `-CheckOnly` only checks the toolchain. The script is `scripts/bootstrap/install.ps1`, published at the root of the
 documentation site. By hand:
 

@@ -54,6 +54,9 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
+# The version of the orchestra is the one of the core it is built around
+$orchestraVersion = [regex]::Match([System.IO.File]::ReadAllText((Join-Path $root 'Shared/Build/Stellar.Versions.props')),
+    '<StellarOrchesterVersion>([^<]+)</StellarOrchesterVersion>').Groups[1].Value
 $mirror = Join-Path $root '.mirror'
 # Git speaks UTF-8: file names in its output must not go through the console code page
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
@@ -149,6 +152,10 @@ foreach ($component in $components) {
 
     $dirty = & git -C $component.Path status --porcelain --untracked-files=no
     if ($dirty) { Write-Warning "$($component.Name) has uncommitted changes: the snapshot takes its last commit only" }
+    # The installer fetches the commits .orchestra names from the repositories: one that was never pushed cannot be
+    if (-not (Invoke-GitQuiet -C $component.Path branch -r --contains $head)) {
+        Write-Warning "$($component.Name) $("$head".Substring(0, 10)) is not pushed: push it, or the installer cannot fetch it"
+    }
 
     $reference = "refs/components/$($component.Name)"
     Invoke-Mirror fetch --quiet --no-tags $component.Path "+HEAD:$reference" | Out-Null
@@ -163,8 +170,13 @@ foreach ($component in $components) {
     $repository = "$(Invoke-GitQuiet -C $component.Path remote get-url origin)".Trim()
     # A URL may carry credentials (https://user:token@host/...): never into a file of a public repository
     $repository = $repository -replace '^(https?://)[^@/]+@', '$1'
+    # The version of a module is in its descriptor; the core is the orchestra
+    $version = $orchestraVersion
+    $descriptor = Join-Path $component.Path "$($component.Name).stellar.module"
+    if ($component.Area -and (Test-Path $descriptor)) { $version = "$((Get-Content $descriptor -Raw | ConvertFrom-Json).Version)" }
+    elseif ($component.Area) { $version = '' }
     # No branch: a machine snapshots what it has checked out, the workflow the default branch; the commit is the fact
-    $marker.Add([ordered]@{ Name = $component.Name; Area = $component.Area; Commit = "$head".Trim(); Repository = $repository })
+    $marker.Add([ordered]@{ Name = $component.Name; Area = $component.Area; Version = $version; Commit = "$head".Trim(); Repository = $repository })
 }
 
 # Components kept as the last snapshot has them: the same folder, the same entry of .orchestra
@@ -179,7 +191,7 @@ if ($Keep.Count -gt 0) {
 
         $keptTree = "$(Invoke-Mirror rev-parse "${parent}:$($entry.Area)/$name")".Trim()
         $areaEntries[$entry.Area] += "040000 tree $keptTree`t$name"
-        $marker.Add([ordered]@{ Name = $entry.Name; Area = $entry.Area; Commit = $entry.Commit; Repository = $entry.Repository })
+        $marker.Add([ordered]@{ Name = $entry.Name; Area = $entry.Area; Version = "$($entry.Version)"; Commit = $entry.Commit; Repository = $entry.Repository })
         $lines.Add(('- {0} {1}: kept from the last snapshot' -f $name, "$($entry.Commit)".Substring(0, 10)))
     }
 }
@@ -193,11 +205,13 @@ function ConvertTo-JsonString([string]$Value) {
     return '"' + ($Value -replace '\\', '\\' -replace '"', '\"') + '"'
 }
 $markerLines = foreach ($entry in $marker) {
-    '    { ' + (@('Name', 'Area', 'Commit', 'Repository' | ForEach-Object {
+    '    { ' + (@('Name', 'Area', 'Version', 'Commit', 'Repository' | ForEach-Object {
                 (ConvertTo-JsonString $_) + ': ' + (ConvertTo-JsonString "$($entry[$_])")
             }) -join ', ') + ' }'
 }
-$markerJson = "{`n  `"Components`": [`n" + ($markerLines -join ",`n") + "`n  ]`n}`n"
+# The descriptor of the orchestra: what scripts/bootstrap/install.ps1 reads to install exactly this
+$markerJson = "{`n  `"Orchestra`": $(ConvertTo-JsonString $orchestraVersion),`n  `"Components`": [`n" +
+    ($markerLines -join ",`n") + "`n  ]`n}`n"
 $markerFile = Join-Path $mirror 'snapshot.orchestra'
 [System.IO.File]::WriteAllText($markerFile, $markerJson, [System.Text.UTF8Encoding]::new($false))
 try { $markerBlob = "$(Invoke-Mirror hash-object -w --no-filters $markerFile)".Trim() }

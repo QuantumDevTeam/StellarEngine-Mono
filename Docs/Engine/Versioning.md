@@ -13,7 +13,9 @@ A version is **the name of an engine state** that can be:
 * demonstrated
 * used as a stable point of comparison
 
-Versions are **not equal to commits** and are **never created automatically**.
+Versions are **not equal to commits** and are **never created automatically**: a version is chosen by hand, as
+`StellarOrchesterVersion` in `Shared/Build/Stellar.Versions.props`. The release workflows only carry the decision
+out, tagging it in the core and in the mirror (see [Releases](Repository.md#releases)).
 
 ---
 

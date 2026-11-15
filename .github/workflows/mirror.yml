@@ -78,10 +78,58 @@ jobs:
           "keep=$($keep -join ',')" >> $env:GITHUB_OUTPUT
 
       - name: Snapshot and push
+        id: snapshot
         shell: pwsh
         run: |
+          $workspace = '${{ steps.workspace.outputs.path }}'
           $keep = @('${{ steps.workspace.outputs.keep }}' -split ',' | Where-Object { $_ })
-          & '${{ steps.workspace.outputs.path }}/scripts/mirror.ps1' -Remote 'https://github.com/${{ github.repository }}.git' -Push -Keep $keep
+
+          # A version of the orchestra (the one of the core) with no tag in the mirror yet is a release
+          $version = [regex]::Match((Get-Content "$workspace/Shared/Build/Stellar.Versions.props" -Raw),
+            '<StellarOrchesterVersion>([^<]+)</StellarOrchesterVersion>').Groups[1].Value
+          $tag = "v$version"
+          $release = -not (git ls-remote --tags origin "refs/tags/$tag")
+          $tagArguments = if ($release) { @('-Tag', $tag) } else { @() }
+
+          & "$workspace/scripts/mirror.ps1" -Remote 'https://github.com/${{ github.repository }}.git' -Push -Keep $keep @tagArguments
+          "release=$($release.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "workspace=$workspace" >> $env:GITHUB_OUTPUT
+
+      - name: Release the orchestra
+        if: steps.snapshot.outputs.release == 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = '${{ steps.snapshot.outputs.version }}'
+          $orchestra = git --git-dir '${{ steps.snapshot.outputs.workspace }}/.mirror' show '${{ steps.snapshot.outputs.tag }}:.orchestra' | Out-String | ConvertFrom-Json
+          $rows = $orchestra.Components | ForEach-Object {
+            $repository = "$($_.Repository)" -replace '\.git$', ''
+            "| [$($_.Name)]($repository) | $($_.Version) | [``$("$($_.Commit)".Substring(0, 10))``]($repository/commit/$($_.Commit)) |"
+          }
+          $site = [regex]::Match((Get-Content '${{ steps.snapshot.outputs.workspace }}/Shared/Build/Stellar.Versions.props' -Raw),
+            '<StellarSiteUri>([^<]+)</StellarSiteUri>').Groups[1].Value
+          $notes = @(
+            "StellarEngine $version: the orchestra, every component at the commit below.",
+            '',
+            '| Component | Version | Commit |',
+            '|---|---|---|'
+          ) + $rows + @(
+            '',
+            'Install it (the latest release is the default):',
+            '',
+            '```powershell',
+            "`$env:STELLAR_INSTALL_VERSION='$version'; irm ${site}install.ps1 | iex",
+            '```'
+          )
+          $notesFile = Join-Path $env:RUNNER_TEMP 'notes.md'
+          $notes -join "`n" | Set-Content -Encoding utf8 $notesFile
+          $flags = @()
+          if ($version.Contains('-')) { $flags += '--prerelease' }
+          gh release create '${{ steps.snapshot.outputs.tag }}' --repo '${{ github.repository }}' --verify-tag --title "StellarEngine $version" --notes-file $notesFile @flags
+          if ($LASTEXITCODE -ne 0) { throw 'gh release create failed' }
 
       - name: Build the site
         env:
