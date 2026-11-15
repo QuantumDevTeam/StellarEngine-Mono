@@ -12,7 +12,8 @@ name: Mirror
 # Public components work with the token of the workflow. A component it cannot clone (a private repository) is kept
 # as the mirror has it; the secret STELLAR_MIRROR_TOKEN (a fine-grained token with read access to their contents)
 # lets the workflow refresh private ones too.
-# The first snapshot comes from a machine: scripts/mirror.ps1 -Push.
+# The first snapshot comes from a machine: scripts/mirror.ps1 -Push. After that this workflow is the only writer:
+# on a machine, mirror.ps1 without -Push shows the next snapshot, Run workflow here publishes it.
 
 on:
   workflow_dispatch:
@@ -105,9 +106,12 @@ jobs:
             '<StellarOrchesterVersion>([^<]+)</StellarOrchesterVersion>').Groups[1].Value
           $tag = "v$version"
           $release = -not (git ls-remote --tags origin "refs/tags/$tag")
-          $tagArguments = if ($release) { @('-Tag', $tag) } else { @() }
 
-          & "$workspace/scripts/mirror.ps1" -Remote 'https://github.com/${{ github.repository }}.git' -Push -Keep $keep @tagArguments
+          # Parameters by name (a hashtable): an array splatted into a script binds by position, and '-Tag' once
+          # became the branch of the mirror
+          $arguments = @{ Remote = 'https://github.com/${{ github.repository }}.git'; Push = $true; Keep = $keep }
+          if ($release) { $arguments.Tag = $tag }
+          & "$workspace/scripts/mirror.ps1" @arguments
           "release=$($release.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
           "tag=$tag" >> $env:GITHUB_OUTPUT
           "version=$version" >> $env:GITHUB_OUTPUT
@@ -128,7 +132,7 @@ jobs:
           $site = [regex]::Match((Get-Content '${{ steps.snapshot.outputs.workspace }}/Shared/Build/Stellar.Versions.props' -Raw),
             '<StellarSiteUri>([^<]+)</StellarSiteUri>').Groups[1].Value
           $notes = @(
-            "StellarEngine $version: the orchestra, every component at the commit below.",
+            "StellarEngine ${version}: the orchestra, every component at the commit below.",
             '',
             '| Component | Version | Commit |',
             '|---|---|---|'

@@ -199,6 +199,10 @@ when anything changed, pushes it and starts the docs workflow. A component it ca
 kept as the mirror has it (`scripts/mirror.ps1 -Keep`); the secret `STELLAR_MIRROR_TOKEN` lets it read private ones
 too. The first snapshot comes from a machine: `scripts/mirror.ps1 -Push`.
 
+After that the workflow is the only writer of the mirror: on a machine, `scripts/mirror.ps1` without `-Push` shows
+what the next snapshot would be, and Run workflow publishes it. A snapshot is always made on top of the last one of
+the mirror; one that cannot read the mirror stops instead of starting a history of its own.
+
 ## Independence
 
 The core must build from a clean clone with nothing else present. That is why:

@@ -18,7 +18,9 @@
     Nothing of the working folders is touched. The mirror lives in its own bare repository, <root>/.mirror (ignored
     by the core), and the commit is built with git plumbing only.
 
-    Without -Push the commit stays local and the script prints the command that publishes it.
+    Without -Push the commit stays local and the script prints the command that publishes it. Once the mirror has
+    its first snapshot, its workflow (.github/workflows/mirror.yml) is the one that pushes: on a machine, run this
+    without -Push to see the next snapshot, and Run workflow in the mirror to publish it.
 
 .PARAMETER Remote
     The mirror repository.
@@ -42,10 +44,15 @@
     Components to take as they are in the last snapshot of the mirror, folder and entry of .orchestra alike, for
     those whose repository cannot be read here (a private one, in the mirror workflow without a token for it).
 #>
+# Every argument by name: a value without its parameter is an error, never a silent fill of the next parameter
+[CmdletBinding(PositionalBinding = $false)]
 param(
     [string]$Remote = 'https://github.com/QuantumDevTeam/StellarEngine-Mono.git',
+    # A name, never an option: '-Tag' landing here (a positional argument) once made snapshots without history
+    [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9._/-]*$')]
     [string]$Branch = 'master',
     [string]$Message = '',
+    [ValidatePattern('^$|^[A-Za-z0-9][A-Za-z0-9._/-]*$')]
     [string]$Tag = '',
     [switch]$Push,
     [switch]$IncludeHidden,
@@ -168,9 +175,10 @@ foreach ($component in $components) {
     if ($component.Area) { $areaEntries[$component.Area] += "040000 tree $componentTree`t$($component.Name)" }
     else { $rootEntries = @(Invoke-Mirror -c core.quotePath=false ls-tree $componentTree) }
 
-    $branch = "$(& git -C $component.Path rev-parse --abbrev-ref HEAD)".Trim()
+    # Not $branch: PowerShell names ignore case, and it would overwrite the parameter $Branch, the branch of the mirror
+    $componentBranch = "$(& git -C $component.Path rev-parse --abbrev-ref HEAD)".Trim()
     $subject = "$(& git -C $component.Path log -1 --format=%s HEAD)".Trim()
-    $lines.Add(('- {0} {1} ({2}): {3}' -f $component.Name, $head.Substring(0, 10), $branch, $subject))
+    $lines.Add(('- {0} {1} ({2}): {3}' -f $component.Name, $head.Substring(0, 10), $componentBranch, $subject))
     $repository = "$(Invoke-GitQuiet -C $component.Path remote get-url origin)".Trim()
     # A URL may carry credentials (https://user:token@host/...): never into a file of a public repository
     $repository = $repository -replace '^(https?://)[^@/]+@', '$1'

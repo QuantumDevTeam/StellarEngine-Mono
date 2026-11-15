@@ -1,7 +1,7 @@
 {
   "Orchestra": "0.8.1",
   "Components": [
-    { "Name": "StellarEngine-Core", "Area": "", "Version": "0.8.1", "Commit": "5c0d4cafa4726e5b1a06105f4eb286438e4bf38b", "Repository": "https://github.com/QuantumDevTeam/StellarEngine-Core.git" },
+    { "Name": "StellarEngine-Core", "Area": "", "Version": "0.8.1", "Commit": "f4bdfbbc7f61a0710abfcbc03be45d4f11880e3b", "Repository": "https://github.com/QuantumDevTeam/StellarEngine-Core.git" },
     { "Name": "Stellar.FileSystem", "Area": "modules", "Version": "0.8.0", "Commit": "935d5d1393de8786cfc4bb710001e22b5cc47da4", "Repository": "https://github.com/QuantumDevTeam/Stellar.FileSystem.git" }
   ]
 }
