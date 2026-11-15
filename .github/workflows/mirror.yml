@@ -35,6 +35,9 @@ jobs:
     steps:
       - name: Checkout the mirror
         uses: actions/checkout@v5
+        with:
+          # Its own credentials would add a second Authorization header to every request to github.com
+          persist-credentials: false
 
       - name: Clone the components
         id: workspace
@@ -50,15 +53,28 @@ jobs:
           # The snapshot is committed by the mirror itself
           git config --global user.name 'stellar-mirror'
           git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          # Credentials in a header, never in a URL: the URLs end up in .orchestra
-          $basic = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("x-access-token:$env:COMPONENTS_TOKEN"))
-          git config --global http.https://github.com/.extraheader "AUTHORIZATION: basic $basic"
-          # The mirror itself is written with the token of this workflow: the most specific URL wins
-          $mirrorBasic = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("x-access-token:$env:MIRROR_TOKEN"))
-          git config --global "http.https://github.com/${{ github.repository }}.git.extraheader" "AUTHORIZATION: basic $mirrorBasic"
+          # Credentials in a header, never in a URL (the URLs end up in .orchestra), one per repository: headers of
+          # every matching http.<url> are all sent, and GitHub refuses a request with two Authorization headers.
+          # Both spellings of a repository, with and without .git, since requests use the one of the remote
+          function Set-Credentials([string]$Repository, [string]$Token) {
+            $basic = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("x-access-token:$Token"))
+            $bare = $Repository -replace '\.git$', ''
+            foreach ($url in $bare, "$bare.git") {
+              git config --global --replace-all "http.$url.extraheader" "AUTHORIZATION: basic $basic"
+            }
+          }
+
+          $mirrorRepository = 'https://github.com/${{ github.repository }}'
+          # The mirror itself is written with the token of this workflow
+          Set-Credentials $mirrorRepository $env:MIRROR_TOKEN
 
           $workspace = Join-Path $env:RUNNER_TEMP 'orchestra'
           $components = @((Get-Content .orchestra -Raw | ConvertFrom-Json).Components)
+          foreach ($component in $components) {
+            if ("$($component.Repository)" -like 'https://github.com/*' -and ($component.Repository -replace '\.git$', '') -ne $mirrorRepository) {
+              Set-Credentials $component.Repository $env:COMPONENTS_TOKEN
+            }
+          }
           # The core first: it is the root the others are cloned into
           $keep = [System.Collections.Generic.List[string]]::new()
           foreach ($component in ($components | Sort-Object { [bool]$_.Area })) {

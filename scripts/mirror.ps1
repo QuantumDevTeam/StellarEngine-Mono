@@ -106,8 +106,12 @@ elseif ((Invoke-Mirror remote get-url origin) -ne $Remote) {
     Invoke-Mirror remote set-url origin $Remote | Out-Null
 }
 
-# The history of the mirror, if it has one yet
-Invoke-GitQuiet --git-dir $mirror fetch --quiet --no-tags origin "+refs/heads/${Branch}:refs/remotes/origin/$Branch" | Out-Null
+# The history of the mirror, if it has one yet. A mirror that cannot be read stops everything: a snapshot made
+# without its history would not follow the last one
+$remoteBranch = Invoke-Mirror ls-remote origin "refs/heads/$Branch"
+if ($remoteBranch) {
+    Invoke-Mirror fetch --quiet --no-tags origin "+refs/heads/${Branch}:refs/remotes/origin/$Branch" | Out-Null
+}
 $parent = Invoke-GitQuiet --git-dir $mirror rev-parse --verify --quiet "refs/remotes/origin/$Branch"
 $local = Invoke-GitQuiet --git-dir $mirror rev-parse --verify --quiet "refs/heads/$Branch"
 if ($local -and $local -ne $parent) {
