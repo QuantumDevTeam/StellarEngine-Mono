@@ -62,7 +62,7 @@ public sealed class ProjectScaffolder
             ["SdkVersion"] = StellarVersions.Sdk,
             ["PackagesDirectory"] = installation.Packages,
             ["StellarRoot"] = installation.Root,
-            ["StellarSchemasUri"] = new System.Uri(installation.Schemas + Path.DirectorySeparatorChar).AbsoluteUri
+            ["StellarSchemasUri"] = StellarVersions.SchemasUri
         });
 
         _logger.Info($"Project {projectName} created in {outputDirectory}");

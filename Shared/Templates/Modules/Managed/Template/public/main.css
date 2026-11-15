@@ -1,0 +1,67 @@
+/*
+    The theme of the StellarEngine sites, over the "modern" template of DocFX: the sites of the core and of the
+    orchestra list this folder last in "template", the template of a module carries a copy.
+*/
+
+:root {
+    --stellar-accent: #8a63ff;
+    --stellar-accent-strong: #6d3df5;
+}
+
+[data-bs-theme="dark"] {
+    --stellar-accent: #a98bff;
+    --stellar-accent-strong: #c4b0ff;
+}
+
+/* The brand: the icon and the name side by side, a fixed size, room before the menu */
+.navbar-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-right: 1.75rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+}
+
+/* The icon is wide (Shared/Branding/stellar_icon.svg: the emblem without the name): fixed height, its own width */
+.navbar-brand #logo {
+    height: 34px;
+    width: auto;
+    max-width: 84px;
+    flex: none;
+    object-fit: contain;
+}
+
+/* Entries of the menu stay on one line */
+.navbar-nav .nav-link {
+    white-space: nowrap;
+}
+
+/* A thin line under the header instead of a block */
+header .navbar {
+    border-bottom: 1px solid var(--bs-border-color-translucent);
+}
+
+/* Links and the active entry in the accent of the logo */
+article a,
+.toc a.active,
+.navbar-nav .nav-link.active {
+    color: var(--stellar-accent);
+}
+
+article a:hover {
+    color: var(--stellar-accent-strong);
+}
+
+/* Code blocks of one command (the installer) read better a little larger */
+article pre > code {
+    font-size: 0.92em;
+}
+
+/* Wide tables of the docs scroll inside the page instead of pushing it */
+article table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+}

@@ -1,0 +1,7 @@
+# Navigation of the documentation site of the module (DocFX). Paths are relative to this file.
+- name: Home
+  href: index.md
+- name: README
+  href: ../README.md
+- name: StellarEngine
+  href: https://quantumdevteam.github.io/StellarEngine-Core/

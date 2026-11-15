@@ -1,6 +1,6 @@
 # Core Architecture
 
-- [README.md](./../../README.md)
+- [README.md](https://github.com/QuantumDevTeam/StellarEngine-Core#readme)
 
 ### Level 0 - Kernel
 

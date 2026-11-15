@@ -1,0 +1,6 @@
+{
+  "Components": [
+    { "Name": "StellarEngine-Core", "Area": "", "Commit": "c8e56986b98b60b33cb4ad7a4389a70f4db18a66", "Repository": "https://github.com/QuantumDevTeam/StellarEngine-Core.git" },
+    { "Name": "Stellar.FileSystem", "Area": "modules", "Commit": "935d5d1393de8786cfc4bb710001e22b5cc47da4", "Repository": "https://github.com/QuantumDevTeam/Stellar.FileSystem.git" }
+  ]
+}

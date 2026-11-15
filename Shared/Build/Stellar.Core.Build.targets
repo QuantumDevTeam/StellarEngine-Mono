@@ -9,5 +9,8 @@
         <AssemblyMetadata Include="StellarCliVersion" Value="$(StellarCliVersion)"/>
         <AssemblyMetadata Include="StellarEngineVersion" Value="$(StellarEngineVersion)"/>
         <AssemblyMetadata Include="StellarNativeAbiVersion" Value="$(StellarNativeAbiVersion)"/>
+        <AssemblyMetadata Include="StellarSiteUri" Value="$(StellarSiteUri)"/>
+        <AssemblyMetadata Include="StellarEngineSiteUri" Value="$(StellarEngineSiteUri)"/>
+        <AssemblyMetadata Include="StellarSchemasUri" Value="$(StellarSchemasUri)"/>
     </ItemGroup>
 </Project>

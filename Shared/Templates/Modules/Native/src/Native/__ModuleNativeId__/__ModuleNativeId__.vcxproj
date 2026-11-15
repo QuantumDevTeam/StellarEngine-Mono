@@ -24,7 +24,7 @@
 
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props"/>
 
-    <!-- The root of the installation: modules/Directory.Build.props sets it, STELLAR_ROOT or the manifest above otherwise -->
+    <!-- The root of the installation: given by the build (stellar modules build), STELLAR_ROOT, or the manifest above -->
     <PropertyGroup>
         <StellarRoot Condition="'$(StellarRoot)' == '' and '$(STELLAR_ROOT)' != ''">$([MSBuild]::EnsureTrailingSlash('$(STELLAR_ROOT)'))</StellarRoot>
         <StellarRoot Condition="'$(StellarRoot)' == ''">$([MSBuild]::GetDirectoryNameOfFileAbove('$(MSBuildProjectDirectory)', 'manifests\engine.manifest.json'))\</StellarRoot>

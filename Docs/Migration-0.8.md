@@ -1,6 +1,6 @@
 # Migrating modules to 0.8
 
-- [README.md](./../README.md)
+- [README.md](https://github.com/QuantumDevTeam/StellarEngine-Core#readme)
 
 What changed for the code that uses the core: the modules of the monorepo that have not moved yet, and anything
 built against the 0.7.0 packages of earlier states of this repository.
@@ -42,7 +42,7 @@ built against the 0.7.0 packages of earlier states of this repository.
 ```
 
 - A module is a folder with a [`.stellar.module`](Formats/ModuleDescriptor.md): its kind, version, description and
-  dependencies come from there, and the project file is nearly empty. See [Modules](Architecture/Modules.md).
+  dependencies come from there, and the project file is nearly empty. See [Modules](https://quantumdevteam.github.io/StellarEngine-Mono/guide/Modules.html).
   `stellar modules new` creates the folder, the descriptor, the projects and the tests.
 - The SDK version moved to `global.json`.
 - Dependencies are plain `StellarDependency` items: the descriptor makes them, a project may add or remove some.

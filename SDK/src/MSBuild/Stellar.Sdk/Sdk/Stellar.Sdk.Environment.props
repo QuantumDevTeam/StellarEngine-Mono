@@ -4,10 +4,11 @@
 
     <!--
         Locating the installation ($STELLAR_ROOT, a checkout of StellarEngine-Core), in order of priority:
-          1. the StellarRoot property (modules/ and projects/ of an installation set it)
+          1. the StellarRoot property (stellar modules build passes it, the core sets it for itself)
           2. the STELLAR_ROOT environment variable
           3. a directory above the project that contains manifests/engine.manifest.json
-          4. the per-user pointer ~/.stellar/<version>/installation_location.txt, written by 'stellar install'
+          4. the registry of the user, $STELLAR_HOME or ~/.stellar: installations.props, generated from
+             installations.json by 'stellar install', gives the installation of this orchestra version
         The same order as Stellar.Tools.Environment.StellarInstallation.
     -->
     <PropertyGroup>
@@ -18,11 +19,12 @@
         <StellarRoot Condition="'$(_StellarManifestAbove)' != ''">$(_StellarManifestAbove)</StellarRoot>
     </PropertyGroup>
     <PropertyGroup Condition="'$(StellarRoot)' == ''">
-        <_StellarUserDirectory Condition="'$(OS)' == 'Windows_NT'">$(USERPROFILE)/.stellar/$(StellarOrchesterVersion)</_StellarUserDirectory>
-        <_StellarUserDirectory Condition="'$(OS)' != 'Windows_NT'">$(HOME)/.stellar/$(StellarOrchesterVersion)</_StellarUserDirectory>
-        <_StellarPointerFile>$(_StellarUserDirectory)/installation_location.txt</_StellarPointerFile>
-        <StellarRoot Condition="Exists('$(_StellarPointerFile)')">$([System.IO.File]::ReadAllText('$(_StellarPointerFile)').Trim())</StellarRoot>
+        <StellarHome Condition="'$(StellarHome)' == ''">$([System.Environment]::GetEnvironmentVariable('STELLAR_HOME'))</StellarHome>
+        <StellarHome Condition="'$(StellarHome)' == '' and '$(OS)' == 'Windows_NT'">$(USERPROFILE)/.stellar</StellarHome>
+        <StellarHome Condition="'$(StellarHome)' == '' and '$(OS)' != 'Windows_NT'">$(HOME)/.stellar</StellarHome>
+        <StellarHome>$([MSBuild]::EnsureTrailingSlash('$(StellarHome)'))</StellarHome>
     </PropertyGroup>
+    <Import Project="$(StellarHome)installations.props" Condition="'$(StellarRoot)' == '' and Exists('$(StellarHome)installations.props')"/>
 
     <!-- The layout of the installation: Stellar.Tools.Environment.StellarInstallation is the same tree in code -->
     <PropertyGroup Condition="'$(StellarRoot)' != ''">

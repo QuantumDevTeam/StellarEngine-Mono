@@ -29,11 +29,13 @@ public static class EngineInstaller
     /// </summary>
     /// <param name="installation">The installation: a checkout of StellarEngine-Core.</param>
     /// <param name="logger">The output.</param>
-    /// <param name="registerForUser">
-    /// Whether to make this the installation of the current user. Sandboxes and tests must pass <c>false</c>.
+    /// <param name="registry">
+    /// The registry to make this the installation of its orchestra version in, usually
+    /// <see cref="InstallationRegistry.ForCurrentUser"/>; <c>null</c> registers nothing. Sandboxes and tests pass
+    /// their own registry or none.
     /// </param>
     /// <exception cref="ToolException">Thrown if the directory is not a checkout of StellarEngine-Core.</exception>
-    public static void Install(StellarInstallation installation, IToolLogger logger, bool registerForUser = true)
+    public static void Install(StellarInstallation installation, IToolLogger logger, InstallationRegistry? registry)
     {
         if (!installation.HasCoreSources)
             throw new ToolException(
@@ -62,10 +64,11 @@ public static class EngineInstaller
 
         ModuleSynchronizer.Synchronize(installation, logger);
 
-        if (registerForUser)
-            FileWriter.WriteAllText(
-                Path.Combine(StellarInstallation.UserDirectory, StellarInstallation.PointerFileName),
-                installation.Root);
+        if (registry is not null)
+        {
+            registry.Register(StellarVersions.Orchester, installation);
+            logger.Info($"Registered as orchestra {StellarVersions.Orchester} in {registry.File}");
+        }
 
         logger.Info($"StellarEngine {StellarVersions.Orchester} installed in {installation.Root}");
     }

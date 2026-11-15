@@ -1,6 +1,6 @@
 # Stellar.Sdk: properties and items
 
-- [README.md](./../../README.md)
+- [README.md](https://github.com/QuantumDevTeam/StellarEngine-Core#readme)
 
 Everything Stellar.Sdk does by itself, and how to change it. A property is set in the project, in
 `config/Stellar.Sdk.props` of the installation (for every project of it), or on the command line (`-p:Name=Value`).
@@ -24,9 +24,10 @@ The project wins over `config/`, `config/` over the defaults.
 
 | Property | Default | Meaning |
 |---|---|---|
-| `StellarRoot` | `STELLAR_ROOT`, a `manifests/` above, the user pointer | The root of the installation |
+| `StellarRoot` | `STELLAR_ROOT`, a `manifests/` above, the user registry | The root of the installation |
+| `StellarHome` | `STELLAR_HOME`, or `~/.stellar` | The registry of the user, read only when nothing else gave `StellarRoot` |
 | `StellarPackagesDir` | `$(StellarRoot)packages/` | The local feed |
-| `StellarArtifactsDir` | `$(StellarRoot)artifacts/` | Everything built: `bin/` and `obj/`, see [the layout](../Architecture/Repository.md) |
+| `StellarArtifactsDir` | `$(StellarRoot)artifacts/` | Everything built: `bin/` and `obj/`, see [the layout](https://quantumdevteam.github.io/StellarEngine-Mono/guide/Repository.html) |
 | `StellarUseArtifactsOutput` | `true` | `false`: the plain `bin/` and `obj/` next to the project |
 | `StellarArtifactsName` | `$(MSBuildProjectName)` | The folder of the project in `artifacts/bin` and `artifacts/obj` |
 | `StellarModuleCatalog` | `$(StellarRoot)manifests/.generated/stellar.modules.props` | The catalog of modules |
@@ -57,7 +58,7 @@ Read-only, set by the SDK: `StellarIsModule`, `StellarModuleKnown`, `StellarModu
 
 | Property / item | Default | Meaning |
 |---|---|---|
-| `StellarNativeWrapper` | `Cli` on Windows, `Managed` elsewhere and with `PublishAot` | The wrapper of the native core |
+| `StellarNativeWrapper` | `Cli` on Windows when the C++/CLI wrapper is built, `Managed` otherwise and with `PublishAot` | The wrapper of the native core |
 | `StellarReferenceNativeWrapper` | `true` | Reference the wrapper (with sources) |
 | `StellarNativeConfiguration` | `$(Configuration)` | Which native build to take from `artifacts/bin` |
 | `<StellarNativeLibrary Include="path.dll"/>` | the DLLs of the native projects of a module | Copied next to the assembly, packed into `runtimes/win-x64/native` |

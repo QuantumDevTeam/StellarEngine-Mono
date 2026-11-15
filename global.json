@@ -3,5 +3,8 @@
     "version": "9.0.300",
     "rollForward": "latestFeature",
     "allowPrerelease": false
+  },
+  "msbuild-sdks": {
+    "Stellar.Sdk": "0.4.0"
   }
 }

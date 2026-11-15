@@ -1,0 +1,40 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
+  "build": {
+    "content": [
+      {
+        "src": "Docs",
+        "files": [
+          "**/*.md",
+          "toc.yml"
+        ]
+      },
+      {
+        "files": [
+          "README.md"
+        ]
+      }
+    ],
+    "resource": [
+      {
+        "files": [
+          "Branding/Logo.svg"
+        ]
+      }
+    ],
+    "output": "artifacts/docs/site",
+    "template": [
+      "default",
+      "modern",
+      "Template"
+    ],
+    "globalMetadata": {
+      "_appName": "{{ModuleId}}",
+      "_appTitle": "{{ModuleId}}",
+      "_appFooter": "{{ModuleId}}, a module of StellarEngine",
+      "_appLogoPath": "Branding/Logo.svg",
+      "_appFaviconPath": "Branding/Logo.svg",
+      "_enableSearch": true
+    }
+  }
+}

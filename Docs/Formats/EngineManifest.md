@@ -1,6 +1,6 @@
 # `engine.manifest.json`
 
-- [README.md](./../../README.md)
+- [README.md](https://github.com/QuantumDevTeam/StellarEngine-Core#readme)
 
 How an installation finds its modules, and what it changes in them: `manifests/engine.manifest.json`, created by
 `stellar install`. The schema is `Shared/Schemas/engine.manifest.schema.json`.
@@ -56,10 +56,10 @@ An entry with no folder, discovered or by `Path`, declares a module that exists 
 The commands edit the entries for you, and leave the manifest as it was when the result would be inconsistent:
 
 ```bash
-dotnet stellar modules add F:/project/CS/Stellar.Logging     # Path, and a NuGet.config in the folder if it has none
-dotnet stellar modules disable Stellar.Physics               # Enabled = false
-dotnet stellar modules enable Stellar.Physics
-dotnet stellar modules reset Stellar.Physics                 # removes the entry
+stellar modules add F:/project/CS/Stellar.Logging     # Path, and a NuGet.config in the folder if it has none
+stellar modules disable Stellar.Physics               # Enabled = false
+stellar modules enable Stellar.Physics
+stellar modules reset Stellar.Physics                 # removes the entry
 ```
 
 ## What is generated
@@ -68,7 +68,7 @@ dotnet stellar modules reset Stellar.Physics                 # removes the entry
 
 | File | For |
 |---|---|
-| `stellar.modules.props` | The catalog MSBuild imports, see [Modules](../Architecture/Modules.md) |
+| `stellar.modules.props` | The catalog MSBuild imports, see [Modules](https://quantumdevteam.github.io/StellarEngine-Mono/guide/Modules.html) |
 | `stellar.modules.json` | The same modules in load order, for tools that read JSON |
 
 ## Validation

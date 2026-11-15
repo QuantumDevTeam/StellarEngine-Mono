@@ -1,6 +1,6 @@
 # Tools
 
-- [README.md](./../../README.md)
+- [README.md](https://github.com/QuantumDevTeam/StellarEngine-Core#readme)
 
 `Stellar.Tools` is the logic of everything that runs outside of a game. Its clients are thin hosts:
 
@@ -78,10 +78,11 @@ Later additions win, and anything no compiler claims is packed as is by `RawReso
 | `stellar info` | Show the installation |
 | `stellar version [component]` | Show component versions |
 | `stellar doctor` | Check that the installation is healthy |
-| `stellar install [path]` | Create or update an installation |
+| `stellar install [path]` | Create or update an installation, and register it for the user |
+| `stellar uninstall [path]` | Remove an installation: unregister it, drop its packages from the NuGet cache, remove what the installer made; `--all`, `--artifacts`, `--dry-run` |
 | `stellar modules list` | Show the manifest in load order |
 | `stellar modules sync` | Find the modules, apply the manifest, check the rules, regenerate the catalog |
-| `stellar modules new`, `templates`, `add`, `enable`, `disable`, `reset`, `build` | See [Modules](Modules.md) |
+| `stellar modules new`, `templates`, `add`, `enable`, `disable`, `reset`, `build` | See [Modules](https://quantumdevteam.github.io/StellarEngine-Mono/guide/Modules.html) |
 | `stellar project new <template> <name>` | Create a project |
 | `stellar project info [directory]` | Show what a project selects |
 | `stellar project template list` | List the templates |

@@ -1,31 +1,16 @@
 name: Docs
 
-# Builds the documentation site from Docs/ with DocFX (docfx.json) and publishes it to GitHub Pages.
+# Builds the documentation site with DocFX and publishes it to GitHub Pages. One workflow, two sites:
+#   - in StellarEngine-Core: the site of the core (docfx.json): Docs/, the API reference, the schemas, the installer;
+#   - in the mirror (StellarEngine-Mono), recognized by the .orchestra file scripts/mirror.ps1 puts at its root:
+#     the site of the orchestra (scripts/orchestra-site.ps1), the core and every module in one site.
 # Pull requests and manual runs on other branches only build; the site is deployed from master only.
 # Repository setting required once: Settings -> Pages -> Source = "GitHub Actions".
 
 on:
   push:
     branches: [master]
-    paths:
-      - 'Docs/**'
-      - 'README.md'
-      - 'CONTRIBUTING.md'
-      - 'LICENSE.md'
-      - 'CLA.md'
-      - 'Shared/Branding/Logo.png'
-      - 'docfx.json'
-      - '.github/workflows/docs.yml'
   pull_request:
-    paths:
-      - 'Docs/**'
-      - 'README.md'
-      - 'CONTRIBUTING.md'
-      - 'LICENSE.md'
-      - 'CLA.md'
-      - 'Shared/Branding/Logo.png'
-      - 'docfx.json'
-      - '.github/workflows/docs.yml'
   workflow_dispatch:
 
 permissions:
@@ -58,14 +43,30 @@ jobs:
         working-directory: ${{ runner.temp }}
         run: dotnet tool install docfx --version "$DOCFX_VERSION" --tool-path "$RUNNER_TEMP/docfx"
 
+      - name: Choose the site
+        id: site
+        shell: pwsh
+        run: |
+          # The local feed of an installation: empty here, but NuGet wants the folder it names to exist
+          New-Item -ItemType Directory -Force packages | Out-Null
+          if (Test-Path .orchestra) {
+            ./scripts/orchestra-site.ps1
+            "config=docfx.orchestra.json" >> $env:GITHUB_OUTPUT
+            "output=artifacts/docs/orchestra-site" >> $env:GITHUB_OUTPUT
+          } else {
+            "config=docfx.json" >> $env:GITHUB_OUTPUT
+            "output=artifacts/docs/site" >> $env:GITHUB_OUTPUT
+          }
+
+      # metadata (the API reference from the managed projects), then build
       - name: Build documentation
-        run: '"$RUNNER_TEMP/docfx/docfx" build docfx.json --warningsAsErrors'
+        run: '"$RUNNER_TEMP/docfx/docfx" "${{ steps.site.outputs.config }}" --warningsAsErrors'
 
       - name: Upload Pages artifact
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
         uses: actions/upload-pages-artifact@v5
         with:
-          path: artifacts/docs/site
+          path: ${{ steps.site.outputs.output }}
 
   deploy:
     name: Deploy to GitHub Pages

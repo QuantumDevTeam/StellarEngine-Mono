@@ -13,7 +13,7 @@
       6. what must be rejected is: an unknown entry point, an unknown module, an unknown wrapper, a broken level rule,
          a manifest change that breaks a dependency.
 
-    Nothing outside the sandbox is changed: it has its own package cache, the user pointer (~/.stellar) is not written,
+    Nothing outside the sandbox is changed: it has its own package cache, the registry of the user (~/.stellar) is not written,
     and no links are created (recursive deletion in Windows PowerShell walks through junctions).
 
 .PARAMETER Wrapper

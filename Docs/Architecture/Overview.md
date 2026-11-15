@@ -1,6 +1,6 @@
 # Architecture Overview
 
-- [README.md](./../../README.md)
+- [README.md](https://github.com/QuantumDevTeam/StellarEngine-Core#readme)
 
 ```mermaid
 flowchart LR

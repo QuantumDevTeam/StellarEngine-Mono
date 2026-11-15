@@ -1,0 +1,26 @@
+# Navigation of the guide of the whole engine, on the site of the engine (scripts/orchestra-site.ps1).
+# The pages live in the core, the only place they can, and are published with the orchestra, not with the core.
+- name: Installing
+  href: Install.md
+- name: Architecture
+  href: Architecture.md
+- name: Design philosophy
+  href: DesignPhilosophy.md
+- name: Modules
+  href: Modules.md
+- name: Installation and repositories
+  href: Repository.md
+- name: Project
+  items:
+    - name: README
+      href: ../../README.md
+    - name: Contributing
+      href: ../../CONTRIBUTING.md
+    - name: Git policy
+      href: GitPolicy.md
+    - name: Versioning
+      href: Versioning.md
+    - name: License
+      href: ../../LICENSE.md
+    - name: CLA
+      href: ../../CLA.md

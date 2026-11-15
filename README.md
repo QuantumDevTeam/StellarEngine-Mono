@@ -2,9 +2,9 @@
 
 Licensed under PolyForm Noncommercial 1.0.0. See [LICENSE.md](LICENSE.md) and [CLA.md](CLA.md).
 
-<img alt="Logo" height="256" src="Shared/Branding/Logo.png" width="256"/>
+<img alt="StellarEngine" height="256" src="Shared/Branding/stellar_1x1.svg" width="256"/>
 
-The core of [StellarEngine](Docs/Architecture.md), a hypermodular game engine: the contracts, the basic concepts and the
+The core of [StellarEngine](Docs/Engine/Architecture.md), a hypermodular game engine: the contracts, the basic concepts and the
 tooling every other part of the engine stands on.
 
 A checkout of this repository is the root of an installation (`$STELLAR_ROOT`): the core lies right there, and the
@@ -33,7 +33,20 @@ engine, and it builds from a clean clone.
 
 ## Installing
 
-You need the .NET 9 SDK, and Visual Studio 2026 with the C++ workload for the native part.
+You need Git, the .NET 9 SDK (9.0.300 or later) and Visual Studio with the C++ workload. C++/CLI support is optional:
+without it the engine uses the P/Invoke wrapper of the native core.
+
+The installer checks all of that, tells how to get what is missing, then clones, builds and installs the core:
+
+```powershell
+irm https://<host>/install.ps1 | iex
+```
+
+Options go through the environment when piped (`STELLAR_INSTALL_PATH`, `STELLAR_INSTALL_REF`,
+`STELLAR_INSTALL_MODULES`), or as parameters:
+`& ([scriptblock]::Create((irm https://<host>/install.ps1))) -Path D:\StellarEngine -Modules Stellar.FileSystem`.
+`-CheckOnly` only checks the toolchain. The script is `scripts/bootstrap/install.ps1`, published at the root of the
+documentation site. By hand:
 
 ```bash
 git clone <StellarEngine-Core> StellarEngine
@@ -42,7 +55,11 @@ powershell -File scripts/build.ps1 -Configuration Release -Install
 ```
 
 The checkout becomes the installation: `modules/`, `packages/`, `manifests/`, `config/`, `projects/` and `tools/` are
-created next to the sources, and git ignores them. See [the layout](Docs/Architecture/Repository.md).
+created next to the sources, and git ignores them. The installation is registered for the user (`~/.stellar`) and the
+`stellar` command is installed as a global dotnet tool. See [the layout](Docs/Engine/Repository.md).
+
+`powershell -File scripts/build.ps1 -Uninstall` undoes all of it, the build output included: the checkout is a plain
+checkout again, and modules, tools and games in their folders stay.
 
 ## Building
 
@@ -53,12 +70,15 @@ powershell -File scripts/build.ps1
 | Option | Effect |
 |---|---|
 | `-Configuration Release` | Release build, Debug by default |
-| `-SkipNative` | Managed part only, for machines with no C++ toolchain: only the `Managed` wrapper |
+| `-SkipNative` | Managed part only, for machines with no C++ toolchain: only the `Managed` wrapper; cannot pack or install |
 | `-Wrapper Cli\|Managed` | The wrapper `Stellar.Core` is packed with, the one the SDK picks by default |
 | `-SkipTests` | Does not run the tests |
 | `-Pack` | Also fills the local feed, `packages/` |
 | `-Install` | Also runs `stellar install` here; implies `-Pack` |
-| `-NoUserRegistration` | With `-Install`: do not write the per-user pointer `~/.stellar` |
+| `-NoUserRegistration` | With `-Install`: do not register the installation for the current user (`~/.stellar`) |
+| `-Uninstall` | Instead of building: `stellar uninstall` here, then `artifacts/`. Modules, tools and games stay |
+| `-All` | With `-Uninstall`: also the files you may have edited (`config/`, isolation files, the manifest) |
+| `-KeepArtifacts` | With `-Uninstall`: keep the build output |
 
 `StellarEngine-Core.sln` opens everything in Visual Studio or Rider. `dotnet` cannot build C++ projects, so from the
 command line use `StellarEngine-Core.Managed.slnf` for the managed part. The managed tests run once per wrapper of the
@@ -71,22 +91,35 @@ once per wrapper. Nothing outside the sandbox is touched.
 ## Modules
 
 ```bash
-dotnet stellar modules new Managed Stellar.Logging --level CoreModule
-dotnet stellar modules build --tests --pack
+stellar modules new Managed Stellar.Logging --level CoreModule
+stellar modules build --tests --pack
 ```
 
 A module is a folder with a `.stellar.module` file under `modules/`, or anywhere with `stellar modules add`. Its
 project is nearly empty: the SDK takes its kind, version and dependencies from the descriptor, and everything it does by
-itself can be switched off or replaced. See [Modules](Docs/Architecture/Modules.md).
+itself can be switched off or replaced. See [Modules](Docs/Engine/Modules.md).
+
+## Working on the whole orchestra
+
+Every module and tool is a repository of its own, cloned into its folder of the installation (`modules/<Module>/`,
+`tools/<Tool>/`); the core ignores those folders. Two scripts tie them together on the machine:
+
+| Script | What it does |
+|---|---|
+| `scripts/solution.ps1` | Writes `StellarEngine.sln`: the core and every project of `modules/` and `tools/`, for the IDE. Ignored by git; run it again when a module or a project appears |
+| `scripts/mirror.ps1` | Makes a snapshot of the committed state of every component as one commit of the mirror (StellarEngine-Mono), the core at the root and each component in its folder. `-Tag v0.8.0`, `-Push` |
+| `scripts/orchestra-site.ps1` | Generates the DocFX project of the orchestra site (`docfx.orchestra.json`): the core and every module in one site. The docs workflow runs it in the mirror |
+
+See [Components and the mirror](Docs/Engine/Repository.md#components-and-the-mirror).
 
 ## Documentation
 
 Architecture:
 
-- [Philosophy](Docs/Architecture.md) and [design philosophy](Docs/DesignPhilosophy.md)
+- [Philosophy](Docs/Engine/Architecture.md) and [design philosophy](Docs/Engine/DesignPhilosophy.md)
 - [Overview](Docs/Architecture/Overview.md), [levels of the engine](Docs/Architecture/Core.md), [pipeline](Docs/Architecture/Pipeline.md)
-- [Layout of this repository and of an installation](Docs/Architecture/Repository.md)
-- [Modules: how they are found, built, referenced and checked](Docs/Architecture/Modules.md)
+- [Layout of this repository and of an installation](Docs/Engine/Repository.md)
+- [Modules: how they are found, built, referenced and checked](Docs/Engine/Modules.md)
 - [SDK: how projects are built](Docs/Architecture/Sdk.md)
 - [Runtime: how an application starts, runs its frames and stops](Docs/Architecture/Runtime.md)
 - [Tools: the resource pipeline and how to extend it](Docs/Architecture/Tools.md)
@@ -106,5 +139,5 @@ Reference:
 
 Workflow:
 
-- [Contributing](CONTRIBUTING.md), [Git policy](Docs/GitPolicy.md), [versioning](Docs/Versioning.md)
+- [Contributing](CONTRIBUTING.md), [Git policy](Docs/Engine/GitPolicy.md), [versioning](Docs/Engine/Versioning.md)
 - [Migrating modules to 0.8](Docs/Migration-0.8.md)

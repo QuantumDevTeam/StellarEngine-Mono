@@ -1,6 +1,6 @@
 # `.stellar.project`
 
-- [README.md](./../../README.md)
+- [README.md](https://github.com/QuantumDevTeam/StellarEngine-Core#readme)
 
 The configuration of a project, named `{Project}.stellar.project`. The JSON schema is
 `Shared/Schemas/stellar.project.schema.json`.

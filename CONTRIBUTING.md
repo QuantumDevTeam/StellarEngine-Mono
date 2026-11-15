@@ -95,7 +95,7 @@ interfaces.
 evaluator module`)
 * Versioning is handled exclusively via Git tags
 
-Refer to [GitPolicy.md](Docs/GitPolicy.md) and [Versioning.md](Docs/Versioning.md) for detailed 
+Refer to [GitPolicy.md](Docs/Engine/GitPolicy.md) and [Versioning.md](Docs/Engine/Versioning.md) for detailed 
 workflow and versioning rules.
 
 ---

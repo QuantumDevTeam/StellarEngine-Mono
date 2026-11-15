@@ -1,0 +1,7 @@
+[Bb]in/
+[Oo]bj/
+.vs/
+.idea/
+*.user
+# The documentation site, built by docfx
+artifacts/

@@ -61,8 +61,11 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- Linked (LinkLibraryDependencies), not referenced as an assembly: a native project has no .NET framework,
+             and IDEs that compare frameworks of references (Rider) would refuse it -->
         <ProjectReference Include="$(StellarRoot)Core\src\Native\Stellar.Native.Core\Stellar.Native.Core.vcxproj">
             <Project>{094D70EB-BA0B-45F7-86D8-F7E79660B578}</Project>
+            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
         </ProjectReference>
         <ProjectReference Include="$(StellarRoot)Kernel\src\Managed\Stellar.Kernel\Stellar.Kernel.csproj">
             <SetPlatform>Platform=AnyCPU</SetPlatform>

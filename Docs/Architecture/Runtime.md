@@ -1,6 +1,6 @@
 # Runtime
 
-- [README.md](./../../README.md)
+- [README.md](https://github.com/QuantumDevTeam/StellarEngine-Core#readme)
 
 `Stellar.Runtime` starts and stops the engine. It reads the configuration of an application, loads the modules it was
 built with, starts them, starts the application, runs the main loop, and takes everything down in the reverse

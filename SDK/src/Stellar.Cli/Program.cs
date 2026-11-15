@@ -25,6 +25,9 @@ app.Configure(config =>
     config.AddCommand<InstallCommand>("install")
         .WithDescription("Create or update an installation");
 
+    config.AddCommand<UninstallCommand>("uninstall")
+        .WithDescription("Remove an installation: back to a plain checkout of the core, unknown to the machine");
+
     config.AddBranch("modules", modules =>
     {
         modules.SetDescription("Engine modules");

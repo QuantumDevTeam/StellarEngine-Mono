@@ -1,6 +1,6 @@
 # SDK
 
-- [README.md](./../../README.md)
+- [README.md](https://github.com/QuantumDevTeam/StellarEngine-Core#readme)
 
 `Stellar.Sdk` is the MSBuild SDK every module and game is built with. It decides what a project references and adds the
 engine steps to the build. It does not define engine behavior.
@@ -29,7 +29,7 @@ The SDK itself comes from the local feed through `NuGet.config`. `stellar projec
 generate both files; a project under the root of the installation also finds the `NuGet.config` of the root.
 
 A module project needs even less: it is nearly empty, and the SDK takes its kind, version and dependencies from its
-descriptor. See [Modules](Modules.md). Every property: [Sdk.Properties](../Reference/Sdk.Properties.md).
+descriptor. See [Modules](https://quantumdevteam.github.io/StellarEngine-Mono/guide/Modules.html). Every property: [Sdk.Properties](../Reference/Sdk.Properties.md).
 
 ## Kinds of projects
 
@@ -53,8 +53,8 @@ assemblies with the same classes (see [Native core](NativeAbi.md)). `StellarNati
 
 | Value | Default | Reference with sources |
 |---|---|---|
-| `Cli` | On Windows | The built `Stellar.Native.Core.Wrapper.Cli.dll`, x64, with `Stellar.Native.Core.dll` and `Ijwhost.dll` |
-| `Managed` | Elsewhere, and with `PublishAot` | `ProjectReference` to `Stellar.Native.Core.Wrapper.Managed` |
+| `Cli` | On Windows, once the C++/CLI wrapper is built in the installation | The built `Stellar.Native.Core.Wrapper.Cli.dll`, x64, with `Stellar.Native.Core.dll` and `Ijwhost.dll` |
+| `Managed` | Elsewhere, on Windows without C++/CLI support, and with `PublishAot` | `ProjectReference` to `Stellar.Native.Core.Wrapper.Managed` |
 
 With sources every project references the wrapper, since its classes are part of the API of `Stellar.Core`. With
 packages the wrapper comes inside the `Stellar.Core` package, which `scripts/build.ps1 -Pack` makes on the machine

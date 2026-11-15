@@ -12,9 +12,9 @@
                 <Import Project="$(StellarRoot)SDK/src/MSBuild/Stellar.Sdk/InRepo/Sdk.targets"/>
             </Project>
     -->
+    <!-- $(StellarRoot) comes from Stellar.Sdk.InRepo.props at the root: no path is derived from where this file lies -->
     <PropertyGroup>
         <StellarSdkInRepo>true</StellarSdkInRepo>
-        <StellarRoot Condition="'$(StellarRoot)' == ''">$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', '..', '..', '..', '..'))</StellarRoot>
 
         <!-- The packages are made from the core, so it always builds from sources -->
         <StellarPrecompiled>false</StellarPrecompiled>

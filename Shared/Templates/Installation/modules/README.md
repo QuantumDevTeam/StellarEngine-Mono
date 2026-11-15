@@ -4,15 +4,15 @@ The modules of this installation, one folder each. A folder with a `<Id>.stellar
 automatically by `stellar modules sync`.
 
 ```bash
-dotnet stellar module new Managed Stellar.Sample --level HighLevel
-dotnet stellar modules sync
-dotnet stellar modules build
+stellar module new Managed Stellar.Sample --level HighLevel
+stellar modules sync
+stellar modules build
 ```
 
 A module that lives elsewhere, e.g. a repository being worked on:
 
 ```bash
-dotnet stellar modules add F:/project/CS/Stellar.Sample
+stellar modules add F:/project/CS/Stellar.Sample
 ```
 
-See `Docs/Architecture/Modules.md` at the root of the installation.
+See `Docs/Engine/Modules.md` at the root of the installation.

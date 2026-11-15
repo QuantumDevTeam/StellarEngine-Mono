@@ -2,11 +2,18 @@
     <!--
         The wrapper of the native core. Engine code only names the classes (Stellar.Core.Identifier and the like),
         and both wrappers provide the same ones:
-          Cli      C++/CLI over the C++ classes: the default on Windows
-          Managed  C# over the P/Invoke exports: everywhere else, and for Native AOT
+          Cli      C++/CLI over the C++ classes: the default on Windows, once it is built in this installation
+          Managed  C# over the P/Invoke exports: everywhere else, on a Windows machine without C++/CLI support,
+                   and for Native AOT
+
+        The SDK does not guess what the machine can build: scripts/build.ps1 builds the C++/CLI wrapper only where
+        Visual Studio has C++/CLI support, and the wrapper is Cli exactly where it exists. Any configuration counts:
+        a Debug build with only a Release wrapper fails with a clear message instead of switching silently.
     -->
     <PropertyGroup Condition="'$(StellarNativeWrapper)' == ''">
-        <StellarNativeWrapper Condition="$([MSBuild]::IsOSPlatform('Windows'))">Cli</StellarNativeWrapper>
+        <_StellarWrapperArtifacts Condition="'$(StellarArtifactsDir)' != ''">$(StellarArtifactsDir)</_StellarWrapperArtifacts>
+        <_StellarWrapperArtifacts Condition="'$(StellarArtifactsDir)' == '' and '$(StellarRoot)' != ''">$([MSBuild]::EnsureTrailingSlash('$(StellarRoot)'))artifacts/</_StellarWrapperArtifacts>
+        <StellarNativeWrapper Condition="$([MSBuild]::IsOSPlatform('Windows')) and '$(_StellarWrapperArtifacts)' != '' and Exists('$(_StellarWrapperArtifacts)bin/Stellar.Native.Core.Wrapper.Cli')">Cli</StellarNativeWrapper>
         <StellarNativeWrapper Condition="'$(StellarNativeWrapper)' == ''">Managed</StellarNativeWrapper>
         <_StellarNativeWrapperDefaulted>true</_StellarNativeWrapperDefaulted>
     </PropertyGroup>

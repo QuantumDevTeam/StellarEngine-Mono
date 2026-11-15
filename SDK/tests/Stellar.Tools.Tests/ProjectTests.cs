@@ -346,7 +346,7 @@ public class InstallerTests
         using var directory = new TempDirectory();
 
         var action = () =>
-            EngineInstaller.Install(new StellarInstallation(directory.Path), NullToolLogger.Instance, false);
+            EngineInstaller.Install(new StellarInstallation(directory.Path), NullToolLogger.Instance, null);
 
         action.Should().Throw<ToolException>().WithMessage("*not a checkout of StellarEngine-Core*");
     }
@@ -357,7 +357,7 @@ public class InstallerTests
         using var directory = new TempDirectory();
         var installation = FakeCore.Create(directory);
 
-        EngineInstaller.Install(installation, NullToolLogger.Instance, false);
+        EngineInstaller.Install(installation, NullToolLogger.Instance, null);
 
         foreach (var path in new[]
                  {
@@ -374,7 +374,7 @@ public class InstallerTests
         File.WriteAllText(installation.EngineManifest, marked);
         File.WriteAllText(Path.Combine(installation.Modules, "Directory.Build.props"), "edited");
 
-        EngineInstaller.Install(installation, NullToolLogger.Instance, false);
+        EngineInstaller.Install(installation, NullToolLogger.Instance, null);
 
         File.ReadAllText(installation.EngineManifest).Should().Be(marked);
         File.ReadAllText(Path.Combine(installation.Modules, "Directory.Build.props")).Should().Be("edited");

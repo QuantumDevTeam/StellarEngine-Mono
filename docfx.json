@@ -1,5 +1,28 @@
 {
   "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
+  "metadata": [
+    {
+      "src": [
+        {
+          "src": ".",
+          "files": [
+            "Kernel/src/Managed/Stellar.Kernel/Stellar.Kernel.csproj",
+            "Core/src/Managed/Stellar.Core/Stellar.Core.csproj",
+            "Runtime/src/Managed/Stellar.Runtime/Stellar.Runtime.csproj",
+            "SDK/src/Stellar.Tools/Stellar.Tools.csproj"
+          ]
+        }
+      ],
+      "dest": "artifacts/docs/api",
+      "properties": {
+        "TargetFramework": "net9.0",
+        "StellarNativeWrapper": "Managed"
+      },
+      "memberLayout": "separatePages",
+      "namespaceLayout": "nested",
+      "enumSortOrder": "declaringOrder"
+    }
+  ],
   "build": {
     "content": [
       {
@@ -7,34 +30,58 @@
         "files": [
           "**/*.md",
           "toc.yml"
+        ],
+        "exclude": [
+          "Engine/**"
         ]
       },
       {
+        "src": "artifacts/docs/api",
+        "dest": "api",
         "files": [
-          "README.md",
-          "CONTRIBUTING.md",
-          "LICENSE.md",
-          "CLA.md"
+          "**/*.yml"
         ]
       }
     ],
     "resource": [
       {
         "files": [
-          "Shared/Branding/Logo.png"
+          "Shared/Branding/stellar_1x1.svg",
+          "Shared/Branding/stellar_icon.svg",
+          "Shared/Branding/logo_clean.svg"
+        ]
+      },
+      {
+        "src": "Shared/Schemas",
+        "dest": "schemas",
+        "files": [
+          "*.json"
+        ]
+      },
+      {
+        "src": "scripts/bootstrap",
+        "files": [
+          "install.ps1"
         ]
       }
     ],
     "output": "artifacts/docs/site",
     "template": [
       "default",
-      "modern"
+      "modern",
+      "Shared/Docs/Template"
     ],
     "globalMetadata": {
-      "_appName": "StellarEngine",
-      "_appTitle": "StellarEngine",
-      "_appFooter": "StellarEngine documentation",
-      "_enableSearch": true
+      "_appName": "StellarEngine-Core",
+      "_appTitle": "StellarEngine-Core",
+      "_appFooter": "StellarEngine-Core, the core of StellarEngine, by QuantumDevTeam",
+      "_appLogoPath": "Shared/Branding/stellar_icon.svg",
+      "_appFaviconPath": "Shared/Branding/stellar_icon.svg",
+      "_enableSearch": true,
+      "_gitContribute": {
+        "repo": "https://github.com/QuantumDevTeam/StellarEngine-Core",
+        "branch": "master"
+      }
     }
   }
 }

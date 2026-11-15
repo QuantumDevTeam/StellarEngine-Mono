@@ -31,11 +31,6 @@ public sealed class StellarInstallation
     public const string EnvironmentVariable = "STELLAR_ROOT";
 
     /// <summary>
-    /// The per-user pointer file, kept in <see cref="UserDirectory"/>.
-    /// </summary>
-    public const string PointerFileName = "installation_location.txt";
-
-    /// <summary>
     /// Creates the layout for a directory. Nothing is created or checked on disk.
     /// </summary>
     /// <param name="root">The root of the installation.</param>
@@ -113,14 +108,6 @@ public sealed class StellarInstallation
     public bool IsInstalled => File.Exists(EngineManifest);
 
     /// <summary>
-    /// Gets the per-user directory of this Stellar release.
-    /// </summary>
-    public static string UserDirectory => Path.Combine(
-        System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile),
-        ".stellar",
-        StellarVersions.Orchester);
-
-    /// <summary>
     /// Resolves a path of a manifest or a descriptor: absolute as is, relative against the root.
     /// </summary>
     public string Resolve(string path)
@@ -129,12 +116,14 @@ public sealed class StellarInstallation
     }
 
     /// <summary>
-    /// Finds the installation: the environment variable, then the per-user pointer, then the directories above
-    /// <paramref name="startDirectory"/>.
+    /// Finds the installation: the environment variable, then the directories above
+    /// <paramref name="startDirectory"/>, then the registry of the current user (the installation of this orchestra
+    /// version).
     /// </summary>
     /// <param name="startDirectory">Where to start walking up. The current directory when omitted.</param>
+    /// <param name="registry">The registry to look in. The one of the current user when omitted.</param>
     /// <returns>The installation, or <c>null</c> if there is none.</returns>
-    public static StellarInstallation? TryLocate(string? startDirectory = null)
+    public static StellarInstallation? TryLocate(string? startDirectory = null, InstallationRegistry? registry = null)
     {
         var fromVariable = System.Environment.GetEnvironmentVariable(EnvironmentVariable);
         if (!string.IsNullOrWhiteSpace(fromVariable))
@@ -149,15 +138,7 @@ public sealed class StellarInstallation
                 return candidate;
         }
 
-        var pointer = Path.Combine(UserDirectory, PointerFileName);
-        if (File.Exists(pointer))
-        {
-            var fromPointer = File.ReadAllText(pointer).Trim();
-            if (fromPointer.Length != 0)
-                return new StellarInstallation(fromPointer);
-        }
-
-        return null;
+        return (registry ?? InstallationRegistry.ForCurrentUser()).Find(StellarVersions.Orchester);
     }
 
     /// <summary>
@@ -168,6 +149,6 @@ public sealed class StellarInstallation
     public static StellarInstallation Locate(string? startDirectory = null)
     {
         return TryLocate(startDirectory) ?? throw new Diagnostics.ToolException(
-            $"StellarEngine installation not found. Set {EnvironmentVariable}, or run 'stellar install' in a checkout of StellarEngine-Core.");
+            $"StellarEngine installation not found. Set {EnvironmentVariable}, or run 'stellar install' in a checkout of StellarEngine-Core to register it.");
     }
 }

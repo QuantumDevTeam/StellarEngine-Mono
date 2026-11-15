@@ -1,7 +1,0 @@
-﻿<Project Sdk="Stellar.Sdk/0.2.0">
-    <PropertyGroup>
-        <StellarSdkUsage>EngineModule</StellarSdkUsage>
-        <IsPackable>true</IsPackable>
-        <ModuleDescription>StellarEngine Audio module</ModuleDescription>
-    </PropertyGroup>
-</Project>

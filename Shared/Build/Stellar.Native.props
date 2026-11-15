@@ -10,10 +10,8 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <Import Project="Stellar.Versions.props" Condition="'$(StellarOrchesterVersion)' == ''"/>
 
+    <!-- $(StellarRoot) is known here: this file is only ever imported as $(StellarRoot)Shared\Build\Stellar.Native.props -->
     <PropertyGroup>
-        <!-- This file lives in <root>/Shared/Build -->
-        <StellarRoot Condition="'$(StellarRoot)' == ''">$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)..\..\'))</StellarRoot>
-
         <!-- Headers of the native Kernel and Core, for #include "include/Kernel/kernel.h" and the like -->
         <StellarNativeKernelDir>$(StellarRoot)Kernel\src\Native\Stellar.Native.Kernel\</StellarNativeKernelDir>
         <StellarNativeCoreDir>$(StellarRoot)Core\src\Native\Stellar.Native.Core\</StellarNativeCoreDir>

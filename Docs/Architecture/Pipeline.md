@@ -1,6 +1,6 @@
 # Engine pipeline
 
-- [README.md](./../../README.md)
+- [README.md](https://github.com/QuantumDevTeam/StellarEngine-Core#readme)
 
 ## Installing & Building
 ```mermaid

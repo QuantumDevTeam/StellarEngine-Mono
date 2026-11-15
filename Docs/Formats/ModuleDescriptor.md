@@ -1,14 +1,14 @@
 # `.stellar.module`
 
-- [README.md](./../../README.md)
+- [README.md](https://github.com/QuantumDevTeam/StellarEngine-Core#readme)
 
 The identity of a module in the engine: the file `<Id>.stellar.module` at the root of the module folder. The schema
-is `Shared/Schemas/stellar.module.schema.json`, and `stellar modules new` writes the `$schema` line, so the IDE checks
-and completes the file.
+is `Shared/Schemas/stellar.module.schema.json`, published on the site of the core, and `stellar modules new` writes the
+`$schema` line with that address (`StellarSchemasUri`), so the IDE checks and completes the file on any machine.
 
 ```json
 {
-  "$schema": "file:///F:/Apps/MyApps/StellarEngine/Shared/Schemas/stellar.module.schema.json",
+  "$schema": "https://quantumdevteam.github.io/StellarEngine-Core/schemas/stellar.module.schema.json",
   "Id": "Stellar.Logging",
   "Version": "0.8.0",
   "Level": "CoreModule",

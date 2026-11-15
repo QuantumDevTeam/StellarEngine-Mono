@@ -91,10 +91,7 @@ public sealed class TemplateRenderer
         if (manifest.Base is { Length: > 0 } baseName)
         {
             var written = new List<string>(Render(
-                Path.Combine(
-                    Path.GetDirectoryName(Path.GetFullPath(templateDirectory).TrimEnd(Path.DirectorySeparatorChar))!,
-                    baseName),
-                outputDirectory, values, conflict));
+                BaseDirectory(templateDirectory, baseName), outputDirectory, values, conflict));
 
             written.AddRange(RenderFiles(templateDirectory, outputDirectory, values,
                 conflict == TemplateConflict.KeepExisting
@@ -104,6 +101,35 @@ public sealed class TemplateRenderer
         }
 
         return RenderFiles(templateDirectory, outputDirectory, values, conflict);
+    }
+
+    /// <summary>
+    /// Tells what a template would write, without writing anything: the files of its base first, then its own,
+    /// a later file replacing an earlier one with the same path.
+    /// </summary>
+    /// <param name="templateDirectory">The template.</param>
+    /// <param name="outputDirectory">Where it would write.</param>
+    /// <param name="values">The placeholder values.</param>
+    /// <returns>The target paths and their content.</returns>
+    /// <exception cref="ToolException">Thrown if the template is missing.</exception>
+    public static IReadOnlyDictionary<string, string> Preview(
+        string templateDirectory,
+        string outputDirectory,
+        IReadOnlyDictionary<string, string> values)
+    {
+        if (!Directory.Exists(templateDirectory))
+            throw new ToolException($"Template not found: {templateDirectory}");
+
+        var files = new Dictionary<string, string>(StringComparer.Ordinal);
+        var manifest = ReadManifest(templateDirectory);
+        if (manifest.Base is { Length: > 0 } baseName)
+            foreach (var pair in Preview(BaseDirectory(templateDirectory, baseName), outputDirectory, values))
+                files[pair.Key] = pair.Value;
+
+        foreach (var (target, content) in Plan(templateDirectory, outputDirectory, values))
+            files[target] = content;
+
+        return files;
     }
 
     /// <summary>
@@ -127,6 +153,28 @@ public sealed class TemplateRenderer
             throw new ToolException($"{outputDirectory} already exists and is not empty");
 
         var written = new List<string>();
+
+        foreach (var (target, content) in Plan(templateDirectory, outputDirectory, values))
+        {
+            if (conflict == TemplateConflict.KeepExisting && File.Exists(target))
+            {
+                _logger.Verbose($"Kept {target}");
+                continue;
+            }
+
+            FileWriter.WriteAllText(target, content);
+            _logger.Verbose($"Created {target}");
+            written.Add(target);
+        }
+
+        return written;
+    }
+
+    private static IEnumerable<(string Target, string Content)> Plan(
+        string templateDirectory,
+        string outputDirectory,
+        IReadOnlyDictionary<string, string> values)
+    {
         var prefix = Path.GetFullPath(templateDirectory).TrimEnd(Path.DirectorySeparatorChar) +
                      Path.DirectorySeparatorChar;
 
@@ -137,20 +185,16 @@ public sealed class TemplateRenderer
             if (string.Equals(relative, TemplateManifest.FileName, StringComparison.Ordinal))
                 continue;
 
-            var target = Path.Combine(outputDirectory, Substitute(relative, values, "__", "__"));
-
-            if (conflict == TemplateConflict.KeepExisting && File.Exists(target))
-            {
-                _logger.Verbose($"Kept {target}");
-                continue;
-            }
-
-            FileWriter.WriteAllText(target, Substitute(File.ReadAllText(source), values, "{{", "}}"));
-            _logger.Verbose($"Created {target}");
-            written.Add(target);
+            yield return (Path.Combine(outputDirectory, Substitute(relative, values, "__", "__")),
+                Substitute(File.ReadAllText(source), values, "{{", "}}"));
         }
+    }
 
-        return written;
+    private static string BaseDirectory(string templateDirectory, string baseName)
+    {
+        return Path.Combine(
+            Path.GetDirectoryName(Path.GetFullPath(templateDirectory).TrimEnd(Path.DirectorySeparatorChar))!,
+            baseName);
     }
 
     private static string Substitute(string text, IReadOnlyDictionary<string, string> values, string opening,

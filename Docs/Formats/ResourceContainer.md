@@ -1,6 +1,6 @@
 # Resource container (`.sres`)
 
-- [README.md](./../../README.md)
+- [README.md](https://github.com/QuantumDevTeam/StellarEngine-Core#readme)
 
 The binary container of compiled resources. It only says "a resource of this type consists of these chunks": what a type
 and its chunks mean is defined by the module that owns the type.

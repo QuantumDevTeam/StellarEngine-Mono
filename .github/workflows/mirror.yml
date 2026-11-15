@@ -1,0 +1,89 @@
+name: Mirror
+
+# Regenerates the mirror (StellarEngine-Mono) from the repositories of its components, then its site.
+#
+# The mirror is never worked in: every commit of it is a snapshot made by scripts/mirror.ps1, here or on a machine.
+# This workflow takes the list of components from the .orchestra file of the last snapshot, clones each at its
+# default branch, makes a new snapshot when anything changed, pushes it, and starts the docs workflow (a push made
+# with the token of a workflow starts no other workflow by itself).
+#
+# It lives in the core like everything the mirror holds, but runs only where the repository variable
+# STELLAR_MIRROR is 'true' (Settings -> Secrets and variables -> Actions -> Variables): in the mirror.
+# Public components work with the token of the workflow. A component it cannot clone (a private repository) is kept
+# as the mirror has it; the secret STELLAR_MIRROR_TOKEN (a fine-grained token with read access to their contents)
+# lets the workflow refresh private ones too.
+# The first snapshot comes from a machine: scripts/mirror.ps1 -Push.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * *'
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: mirror
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    name: Snapshot the orchestra
+    if: vars.STELLAR_MIRROR == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the mirror
+        uses: actions/checkout@v5
+
+      - name: Clone the components
+        id: workspace
+        shell: pwsh
+        env:
+          COMPONENTS_TOKEN: ${{ secrets.STELLAR_MIRROR_TOKEN || github.token }}
+          MIRROR_TOKEN: ${{ github.token }}
+        run: |
+          if (-not (Test-Path .orchestra)) {
+            throw 'No .orchestra here: make the first snapshot on a machine with scripts/mirror.ps1 -Push'
+          }
+
+          # The snapshot is committed by the mirror itself
+          git config --global user.name 'stellar-mirror'
+          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          # Credentials in a header, never in a URL: the URLs end up in .orchestra
+          $basic = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("x-access-token:$env:COMPONENTS_TOKEN"))
+          git config --global http.https://github.com/.extraheader "AUTHORIZATION: basic $basic"
+          # The mirror itself is written with the token of this workflow: the most specific URL wins
+          $mirrorBasic = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("x-access-token:$env:MIRROR_TOKEN"))
+          git config --global "http.https://github.com/${{ github.repository }}.git.extraheader" "AUTHORIZATION: basic $mirrorBasic"
+
+          $workspace = Join-Path $env:RUNNER_TEMP 'orchestra'
+          $components = @((Get-Content .orchestra -Raw | ConvertFrom-Json).Components)
+          # The core first: it is the root the others are cloned into
+          $keep = [System.Collections.Generic.List[string]]::new()
+          foreach ($component in ($components | Sort-Object { [bool]$_.Area })) {
+            $target = if ($component.Area) { Join-Path $workspace "$($component.Area)/$($component.Name)" } else { $workspace }
+            if ($component.Repository) { git clone --quiet $component.Repository $target 2>$null }
+            if ($component.Repository -and $LASTEXITCODE -eq 0) {
+              Write-Host "$($component.Name): $(git -C $target log -1 --format='%h %s')"
+              continue
+            }
+            if (-not $component.Area) { throw "Cannot clone the core from $($component.Repository)" }
+            # A private repository without a token for it, or one gone: the mirror keeps what it has
+            Write-Host "::warning::$($component.Name) cannot be cloned from '$($component.Repository)': kept as the mirror has it"
+            if (Test-Path $target) { Remove-Item $target -Recurse -Force }
+            $keep.Add($component.Name)
+          }
+          "path=$workspace" >> $env:GITHUB_OUTPUT
+          "keep=$($keep -join ',')" >> $env:GITHUB_OUTPUT
+
+      - name: Snapshot and push
+        shell: pwsh
+        run: |
+          $keep = @('${{ steps.workspace.outputs.keep }}' -split ',' | Where-Object { $_ })
+          & '${{ steps.workspace.outputs.path }}/scripts/mirror.ps1' -Remote 'https://github.com/${{ github.repository }}.git' -Push -Keep $keep
+
+      - name: Build the site
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run docs.yml --repo '${{ github.repository }}' --ref master

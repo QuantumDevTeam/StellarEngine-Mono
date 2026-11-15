@@ -1,0 +1,39 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
+  "build": {
+    "content": [
+      {
+        "src": "Docs",
+        "files": [
+          "**/*.md",
+          "toc.yml"
+        ]
+      },
+      {
+        "files": [
+          "README.md"
+        ]
+      }
+    ],
+    "resource": [
+      {
+        "files": [
+          "Branding/Logo.svg"
+        ]
+      }
+    ],
+    "output": "artifacts/docs/site",
+    "template": [
+      "default",
+      "modern"
+    ],
+    "globalMetadata": {
+      "_appName": "Stellar.FileSystem",
+      "_appTitle": "Stellar.FileSystem",
+      "_appFooter": "Stellar.FileSystem, a module of StellarEngine",
+      "_appLogoPath": "Branding/Logo.svg",
+      "_appFaviconPath": "Branding/Logo.svg",
+      "_enableSearch": true
+    }
+  }
+}

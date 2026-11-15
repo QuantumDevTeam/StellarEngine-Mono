@@ -1,14 +1,7 @@
-# Navigation of the generated documentation site (DocFX). Paths are relative to this file.
+# Navigation of the site of the core (DocFX). Paths are relative to this file.
+# Docs/Engine/ is not here: it is the guide of the whole engine, on the site of the engine (scripts/orchestra-site.ps1).
 - name: Home
   href: index.md
-- name: Overview
-  items:
-    - name: README
-      href: ../README.md
-    - name: Architecture
-      href: Architecture.md
-    - name: Design Philosophy
-      href: DesignPhilosophy.md
 - name: Architecture
   items:
     - name: Overview
@@ -17,10 +10,6 @@
       href: Architecture/Core.md
     - name: Pipeline
       href: Architecture/Pipeline.md
-    - name: Repository
-      href: Architecture/Repository.md
-    - name: Modules
-      href: Architecture/Modules.md
     - name: SDK
       href: Architecture/Sdk.md
     - name: Runtime
@@ -45,17 +34,9 @@
       href: Reference/Sdk.Properties.md
     - name: Diagnostics
       href: Reference/Diagnostics.md
-- name: Project
-  items:
-    - name: Contributing
-      href: ../CONTRIBUTING.md
-    - name: Git policy
-      href: GitPolicy.md
-    - name: Versioning
-      href: Versioning.md
     - name: Migrating to 0.8
       href: Migration-0.8.md
-    - name: License
-      href: ../LICENSE.md
-    - name: CLA
-      href: ../CLA.md
+- name: API
+  href: ../artifacts/docs/api/
+- name: StellarEngine
+  href: https://quantumdevteam.github.io/StellarEngine-Mono/
