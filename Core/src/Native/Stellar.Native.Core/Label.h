@@ -19,8 +19,8 @@ namespace Stellar::Native::Core
 {
     /// @brief A human-readable name bound to an identifier.
     ///
-    /// A label is a cheap value and does not own its name: the text must outlive the label. Literals are safe, and
-    /// Data::Registry::LabelRegistry keeps its own copy of the names of the labels it returns.
+    /// A label is a cheap value and does not own its name: the text must outlive the label. Literals are safe; there is no
+    /// registry of labels: a label is its identifier and its name, nothing more.
     struct STELLAR_EMPTY_BASES STELLAR_CORE_API Label final : Stringable<Label>, Hashable<Label>, Identifiable
     {
     private:

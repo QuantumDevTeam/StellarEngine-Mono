@@ -1,70 +1,101 @@
+using System;
 using System.Collections.Generic;
 using Stellar.Kernel.Quantization;
 
 namespace Stellar.Kernel.Data.Registry;
 
 /// <summary>
-/// Provides a storage and lookup service for registrable quantum objects.
+/// A registry, whatever it holds: objects of the engine by their identifiers.
 /// </summary>
-/// <typeparam name="T">The type of objects stored in the registry. Must implement <see cref="IRegistrableQuantumObject"/>.</typeparam>
 /// <remarks>
-/// <para>The registry maps <see cref="IIdentifier.UID"/> to object instances. It is used for global or scoped access
-/// to engine components such as entities, tasks, resources, and systems.</para>
-/// <para>Implementations must be thread-safe.</para>
+/// <para>A registry is the only one that adds an object to itself and removes it, and it tells the object each time
+/// (<see cref="IRegistrableQuantumObject.Registrations"/>), so the object knows where it is and leaves every registry
+/// when it is disposed. An object never registers itself.</para>
+/// <para>This part of the contract needs no type: what lists, finds or removes by identifier.</para>
 /// </remarks>
-/// <example>
-/// Registering and retrieving an object:
-/// <code>
-/// IRegistry&lt;IMyObject&gt; registry = new MyRegistry&lt;IMyObject&gt;();
-/// IMyObject obj = ...;
-/// registry.Register(obj);
-/// IMyObject? found = registry.Get(obj.UID);
-/// </code>
-/// </example>
-public interface IRegistry<T>
+public interface IRegistry
     : IQuantumObject
-    where T : IRegistrableQuantumObject
 {
     /// <summary>
-    /// Determines whether an object with the specified identifier exists in the registry.
+    /// Gets the type of the objects of this registry.
     /// </summary>
-    /// <param name="id">The unique identifier of the object.</param>
-    /// <returns><c>true</c> if the object exists; otherwise, <c>false</c>.</returns>
-    bool Exists(IIdentifier id);
+    Type ItemType { get; }
 
     /// <summary>
-    /// Registers an object in the registry.
-    /// </summary>
-    /// <param name="obj">The object to register.</param>
-    /// <returns><c>true</c> if the object was registered; <c>false</c> if an object with the same key already exists.</returns>
-    bool Register(T obj);
-
-    /// <summary>
-    /// Retrieves a registered object by its identifier.
-    /// </summary>
-    /// <param name="id">The identifier of the object.</param>
-    /// <returns>The object if found; otherwise, <c>null</c>.</returns>
-    T? Get(IIdentifier id);
-
-    /// <summary>
-    /// Removes and returns a registered object by its identifier.
-    /// </summary>
-    /// <param name="id">The identifier of the object.</param>
-    /// <returns>The removed object, or <c>null</c> if the object was not registered.</returns>
-    T? Pop(IIdentifier id);
-
-    /// <summary>
-    /// Gets the number of objects currently registered.
+    /// Gets the number of objects registered now.
     /// </summary>
     int Size { get; }
 
     /// <summary>
-    /// Gets a snapshot of the identifiers of all registered objects.
+    /// Gets a snapshot of the identifiers of the objects registered now.
     /// </summary>
-    ICollection<IIdentifier> Keys { get; }
+    ICollection<Identifier> Keys { get; }
 
     /// <summary>
-    /// Gets a snapshot of all registered objects.
+    /// Gets whether an object with the identifier is registered.
+    /// </summary>
+    /// <param name="id">The identifier.</param>
+    /// <returns><c>true</c> if it is.</returns>
+    bool Exists(Identifier id);
+
+    /// <summary>
+    /// Removes the object with the identifier, and tells it.
+    /// </summary>
+    /// <param name="id">The identifier.</param>
+    /// <returns><c>true</c> if an object was removed.</returns>
+    bool Unregister(Identifier id);
+}
+
+/// <summary>
+/// Objects of the engine of one type, by their identifiers.
+/// </summary>
+/// <typeparam name="T">
+/// The type of the objects: a base class or a contract, so a <c>Player</c> derived from <c>Actor</c> sits in the
+/// registry of actors, and is found there as an actor or, asked so, as a player.
+/// </typeparam>
+/// <example>
+/// <code>
+/// actors.Register(player);
+/// Actor? actor = actors.Get(player.UID);
+/// Player? same = actors.Get&lt;Player&gt;(player.UID);
+/// </code>
+/// </example>
+public interface IRegistry<T>
+    : IRegistry
+    where T : class, IRegistrableQuantumObject
+{
+    /// <summary>
+    /// Registers an object, and tells it.
+    /// </summary>
+    /// <param name="item">The object.</param>
+    /// <returns><c>true</c> if it was registered; <c>false</c> if an object with its identifier already is.</returns>
+    bool Register(T item);
+
+    /// <summary>
+    /// Finds an object.
+    /// </summary>
+    /// <param name="id">Its identifier.</param>
+    /// <returns>The object, or <c>null</c> if none is registered.</returns>
+    T? Get(Identifier id);
+
+    /// <summary>
+    /// Finds an object of a derived type: a checked cast, never a guess.
+    /// </summary>
+    /// <typeparam name="TItem">The type the object is expected to be.</typeparam>
+    /// <param name="id">Its identifier.</param>
+    /// <returns>The object, or <c>null</c> if none is registered or it is not a <typeparamref name="TItem"/>.</returns>
+    TItem? Get<TItem>(Identifier id)
+        where TItem : class, T;
+
+    /// <summary>
+    /// Removes an object, and tells it.
+    /// </summary>
+    /// <param name="id">Its identifier.</param>
+    /// <returns>The removed object, or <c>null</c> if none was registered.</returns>
+    T? Pop(Identifier id);
+
+    /// <summary>
+    /// Gets a snapshot of the objects registered now.
     /// </summary>
     ICollection<T> Values { get; }
 }

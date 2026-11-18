@@ -1,3 +1,5 @@
+using Stellar.Kernel.Lifecycle;
+
 namespace Stellar.Runtime.Hosting;
 
 /// <summary>
@@ -8,7 +10,8 @@ namespace Stellar.Runtime.Hosting;
 /// <c>Main</c> calls <see cref="Run(string, string[])"/> with the name of the application. The application itself is
 /// a module like any other; the runtime reads its configuration, loads the modules it was built with, starts the
 /// engine, then the application, then runs the main loop.</para>
-/// <para>The calling thread becomes the main thread of the engine.</para>
+/// <para>The calling thread becomes the main thread of the engine. From here on, code outside the engine is an error
+/// (<see cref="EngineScope.Detached"/>): nothing falls back to the default instance of the process.</para>
 /// </remarks>
 public static class StellarRuntime
 {
@@ -30,6 +33,9 @@ public static class StellarRuntime
     /// <returns>The exit code (<see cref="RuntimeExitCodes"/>).</returns>
     public static int Run(RuntimeLaunch launch)
     {
+        // An application is engine code from start to end: what runs outside its engine is a mistake, not a tool
+        EngineScope.Detached = DetachedPolicy.Throw;
+
         using var host = new RuntimeHost(launch);
         return host.Run();
     }

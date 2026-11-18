@@ -87,6 +87,30 @@ new threads, and whatever is reached without a context finds the right instance 
 registries of the native core. `Stellar.Core.Global.Engine` is a static view of the current one. When the Core module
 of an engine stops, its `CoreEngine` and native registries go with it. See [Native core](NativeAbi.md#contexts).
 
+Code outside any engine is what `EngineScope.Detached` says: tools and tests get the default instance of the
+process; an application run by `StellarRuntime.Run` gets an error instead (`DetachedPolicy.Throw`), since all its code
+belongs to an engine. Code reached without the scope (a native callback, an event of the operating system, work
+queued with an `Unsafe` API) enters the scope of its engine itself: `using (EngineScope.Enter(engine)) { ... }`.
+
+## Registries
+
+Each engine has one registry per type, made the first time it is asked for: `CoreEngine.Registry.Of<T>()`, or
+`Engine.Registry.Of<T>()` for the current engine. A registry holds objects by their identifiers.
+
+- **Only a registry registers.** `registry.Register(item)` and `registry.Pop(id)`; the registry tells the object,
+  whose `Registrations` lists where it is. Disposing an object removes it from every registry it is in, of whatever
+  engine. Any code can make a registry of its own: `new Registry<T>()`.
+- **Base types.** The registry of a base class or a contract holds the derived objects: `class Actor :
+  RegistrableQuant<Actor, ActorMeta>` puts a `Player : Actor` into the registry of actors, where
+  `actors.Get(id)` finds it as an actor and `actors.Get<Player>(id)` as a player (or `null`, never a wrong cast).
+- **Implicit registration.** A new `RegistrableQuant`, `RegistrableMetaQuant` or data container asks the registries
+  of the current engine to take it: into the registry of its home type (the first type parameter), and of every
+  type of its hierarchy marked `[StellarRegistry]`. `protected override bool RegistersImplicitly => false` turns it
+  off for a class, which then registers its objects itself.
+
+What is found by a key of its own (services by their contract, content types by extension, drivers by scheme) is a
+catalog, `ICatalog<TKey, TValue>`, not a registry. The services of an engine are its `IServiceCatalog`.
+
 The runtime publishes its part in the services before Stellar.Core starts: `IEngineInstance`, `IEngineControl`,
 `IMainThreadDispatcher`, `ITimeSystem`, `IMainLoops` and `IMainLoop` (the primary loop).
 
@@ -132,11 +156,13 @@ Every frame of a loop:
 3. the clocks, read once: every participant gets the step of its own clock,
 4. the timers that are due,
 5. `PreUpdate`, `FixedUpdate` (once per fixed step of the clock, at most `MaxFixedSteps`), `Update`, `PostUpdate`,
-   `PreRender`, `Render`, `PostRender`, for the participants of each, skipping those whose clock is paused,
+   `PreRender`, `Render`, `PostRender`, for the participants of each, skipping those whose clock is paused. A
+   participant is not called for a phase it has only the empty default of (`PreUpdate`, `PostUpdate`, `PreRender`,
+   `PostRender`),
 6. the loops attached to this one,
 7. the wait for the next frame, if the frame rate is limited. Posted work runs meanwhile.
 
-`IFrameContext` gives the phase, the frame, the clock of the participant, its time and its step (`DeltaTime`),
+A phase gets a `FrameContext` (`in`): the phase, the frame, the clock of the participant, its time and its step (`DeltaTime`),
 and the real step (`UnscaledDeltaTime`). An entry point that is `IUpdatable`, `IFixedUpdatable` or `IRenderable` joins
 the primary loop when it starts and leaves it when it stops. Adding, removing, scheduling and pausing are safe from any
 thread. `Pause()` skips the phases and keeps the frames, and posted work still runs.
@@ -154,7 +180,34 @@ apart from the others.
 
 ## Failures
 
-The runtime starts before the failure system of Stellar.Core, so it catches at levels of its own:
+Code of the engine works with failures (`Failure`): what went wrong, its kind (`FailureKind`, an open set such as
+`filesystem`, or `audio` of a module), its level (`NonCritical`, `Warning`, `Error`, `CriticalError`), and what was done
+about it (`FailureReaction`: log, stop the work, stop the engine). An error of the engine is a `FailureException`, which
+carries its failure; any other exception is wrapped into one.
+
+Each engine has its failure system (`IFailureSystem`), published by Stellar.Core in its services: reactions in two
+catalogs, by level and by kind and level, and handlers that hear of failures. `Engine.Failures` is the one of the
+current engine.
+
+The `Catcher` catches around suspicious calls, as a scope with catch blocks of its own:
+
+```csharp
+using (var catcher = new Catcher(FailureKind.FileSystem, FailureLevel.Warning))
+{
+    catcher.Catch<FileNotFoundException>(_ => firstRun = true);
+
+    var save = catcher.Try(() => LoadSave(slot), fallback: Save.Empty);
+    catcher.Run(() => UpgradeSettings());
+}
+```
+
+A call that fails is reported to the failure system of the current engine. If the reaction stops the work, the failure
+is thrown on as a `FailureException`, as if the call had not been caught, and the whole `try` around it stops; otherwise
+the call gives its fallback and the block goes on. A catch block handles its exceptions itself, without a report. A
+failure is reported once, whichever catchers it goes through. Outside any engine a catcher stands alone. `Guard` and
+`Report` never throw: they give the failure back, for code that decides itself.
+
+The runtime catches with the same catchers (`RuntimeCatchers`), one per level, from before the failure system exists:
 
 | Level | What | Outcome |
 |---|---|---|
@@ -163,8 +216,33 @@ The runtime starts before the failure system of Stellar.Core, so it catches at l
 | `Engine` | The run around the main loop, the stops | Fatal |
 | `MainLoop` | One call of one participant in one phase | Reported: the failure system decides |
 
-Before Stellar.Core is up there is nothing but `try`/`catch` and the error output. Once it is, Stellar.Core publishes an
-`IFailureReporter`, and what the runtime catches goes through the failure levels and handlers like any other failure.
+The runtime catchers keep the last 16 failures (`Catcher.Keeps`): a failure that repeats on every frame costs no memory.
+
+Before Stellar.Core is up, a failure is written to the log of the runtime, and in the main loop the loop goes on. Once it
+is, what the runtime catches goes to the failure system like any other failure; what the engine does not log is still
+written to the log of the runtime.
+
+## Profiling
+
+The profiler is a module; the engine is ready for it. `Stellar.Kernel.Profiling` gives what code marks and what a
+profiler implements:
+
+- `ProfilerMarker`, made once in a static field, marks a span: `using (Step.Auto()) Simulate(delta);`.
+  `ProfilerCounter` follows a value, `Instant` marks a moment. Names are numbered once for the process
+  (`ProfilerMarkers`); categories (`ProfilerCategory`) are an open set, as the kinds of failures are.
+- `IProfilerSession` is a recording of one engine: the module makes it and attaches it (`Profiler.Attach(engine,
+  session)`); the engine writes `ProfilerEvent`s into it, on the thread of the work. An editor records the game it runs,
+  not itself. Code outside any engine has a session of its own, attached for `null`.
+- `ProfilerEvent` is 24 bytes, blittable, `StellarProfilerEvent` of `Abi/Profiling.h`: a session keeps the events of
+  each thread in a native list, and native code writes the same events into the same lists, on the same clock
+  (`Stopwatch.GetTimestamp`).
+
+While nothing is recorded, a marker costs one check and the loop reads the session once a frame. What the runtime marks:
+
+| Detail | Marks |
+|---|---|
+| `Frames` | each frame of each loop (a `Frame` event with its index, and a span), its phases, timers and posted work, the stages; counters a frame: bytes allocated by the loop thread, collections of generation 0 |
+| `Participants` | also every call of every participant, under the name of its type: about 17 ns an event, so for a while, not always |
 
 ## Threads
 

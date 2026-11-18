@@ -9,8 +9,11 @@ public abstract class Quant<TMeta>
     : IQuant
     where TMeta : IMetaQuant
 {
-    // Replaced on change, never mutated: readers need no lock, and attaching is rare.
-    private volatile IMetaQuant[] _metas;
+    private readonly IMetaQuant _meta;
+
+    // Made on first need: most quants have only their primary meta, and pay no array for it. Replaced on change,
+    // never mutated: readers need no lock, a writer swaps it whole
+    private IMetaQuant[]? _metas;
 
     /// <summary>
     /// Creates a quant.
@@ -21,7 +24,7 @@ public abstract class Quant<TMeta>
         ArgumentNullException.ThrowIfNull(meta);
 
         MetaQuant = meta;
-        _metas = [meta];
+        _meta = meta;
     }
 
     /// <summary>
@@ -30,20 +33,23 @@ public abstract class Quant<TMeta>
     public TMeta MetaQuant { get; }
 
     /// <inheritdoc/>
-    public IMetaQuant Meta => _metas[0];
+    public IMetaQuant Meta => _meta;
 
     /// <inheritdoc/>
-    public IReadOnlyList<IMetaQuant> Metas => _metas;
+    public IReadOnlyList<IMetaQuant> Metas => AllMetas();
 
     /// <inheritdoc/>
-    public IIdentifier UID => Meta.UID;
+    public Identifier UID => _meta.UID;
 
     /// <inheritdoc/>
     public TMeta2? FindMeta<TMeta2>()
         where TMeta2 : class, IMetaQuant
     {
-        foreach (var meta in _metas)
-            if (meta is TMeta2 typed)
+        if (_meta is TMeta2 primary) return primary;
+        if (Volatile.Read(ref _metas) is not { } metas) return null;
+
+        for (var i = 1; i < metas.Length; i++)
+            if (metas[i] is TMeta2 typed)
                 return typed;
 
         return null;
@@ -58,12 +64,11 @@ public abstract class Quant<TMeta>
     {
         ArgumentNullException.ThrowIfNull(meta);
 
-        lock (this)
+        while (true)
         {
-            if (_metas.Contains(meta)) return false;
-
-            _metas = [.. _metas, meta];
-            return true;
+            var current = AllMetas();
+            if (Array.IndexOf(current, meta) >= 0) return false;
+            if (Interlocked.CompareExchange(ref _metas, [.. current, meta], current) == current) return true;
         }
     }
 
@@ -76,12 +81,21 @@ public abstract class Quant<TMeta>
     {
         ArgumentNullException.ThrowIfNull(meta);
 
-        lock (this)
-        {
-            if (ReferenceEquals(meta, _metas[0]) || !_metas.Contains(meta)) return false;
+        if (ReferenceEquals(meta, _meta)) return false;
 
-            _metas = _metas.Where(m => !ReferenceEquals(m, meta)).ToArray();
-            return true;
+        while (true)
+        {
+            var current = AllMetas();
+            var index = Array.IndexOf(current, meta);
+            if (index < 0) return false;
+
+            IMetaQuant[] next = [.. current.AsSpan(0, index), .. current.AsSpan(index + 1)];
+            if (Interlocked.CompareExchange(ref _metas, next, current) == current) return true;
         }
+    }
+
+    private IMetaQuant[] AllMetas()
+    {
+        return Volatile.Read(ref _metas) ?? Interlocked.CompareExchange(ref _metas, [_meta], null) ?? _metas!;
     }
 }

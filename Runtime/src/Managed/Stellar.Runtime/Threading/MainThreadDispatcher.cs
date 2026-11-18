@@ -1,3 +1,4 @@
+using Stellar.Kernel.Failures;
 using System.Collections.Concurrent;
 using Stellar.Kernel.Threading;
 using Stellar.Runtime.Failures;
@@ -86,17 +87,20 @@ public sealed class MainThreadDispatcher
     /// Runs the work that is waiting. Work posted meanwhile waits for the next call.
     /// </summary>
     /// <param name="catcher">Catches what the work throws.</param>
+    /// <param name="level">Where the work runs: whether a failure is fatal.</param>
     /// <returns><c>true</c> if the engine must stop because of something the work threw.</returns>
     /// <exception cref="InvalidOperationException">Thrown if called from another thread.</exception>
-    public bool Drain(RuntimeCatcher catcher)
+    public bool Drain(Catcher catcher, CatchLevel level)
     {
         if (!IsMainThread)
             throw new InvalidOperationException("The work of the main thread runs on the main thread only");
 
+        if (_queue.IsEmpty) return false;
+
         var mustStop = false;
 
         for (var count = _queue.Count; count > 0 && _queue.TryDequeue(out var action); count--)
-            mustStop |= catcher.Run(action, "work posted to the main thread").MustStop;
+            mustStop |= RuntimeCatchers.MustStop(level, catcher.Guard(action, "work posted to the main thread"));
 
         return mustStop;
     }

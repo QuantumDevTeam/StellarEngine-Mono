@@ -3,12 +3,22 @@
 
 namespace Stellar::Native::Core
 {
+    namespace
+    {
+        [[nodiscard]] Ptr<Memory::Allocator> CreateAllocator()
+        {
+            const auto allocator = Memory::Allocator::Create();
+            if (!allocator)
+                throw std::bad_alloc();
+
+            return allocator;
+        }
+    }
+
     struct CoreContext::Impl
     {
-        // Declared in reverse order of dependence: modules go first when the context is destroyed
-        Data::Registry::IdentifierRegistry identifiers;
-        Data::Registry::LabelRegistry labels;
-        Data::Registry::ContainerRegistry containers;
+        // Declared in reverse order of dependence: modules go first when the context is destroyed, the allocator last
+        Memory::AllocatorReference allocator{CreateAllocator()};
         Modules::ModuleRegistry modules;
     };
 
@@ -23,19 +33,9 @@ namespace Stellar::Native::Core
         return instance;
     }
 
-    Link<Data::Registry::IdentifierRegistry> CoreContext::Identifiers() const
+    Link<Memory::Allocator> CoreContext::Allocator() const
     {
-        return _impl->identifiers;
-    }
-
-    Link<Data::Registry::LabelRegistry> CoreContext::Labels() const
-    {
-        return _impl->labels;
-    }
-
-    Link<Data::Registry::ContainerRegistry> CoreContext::Containers() const
-    {
-        return _impl->containers;
+        return _impl->allocator.Get();
     }
 
     Link<Modules::ModuleRegistry> CoreContext::Modules() const

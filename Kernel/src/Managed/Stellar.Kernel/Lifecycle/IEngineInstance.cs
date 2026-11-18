@@ -44,5 +44,5 @@ public interface IEngineInstance
     /// <summary>
     /// Gets the services of the engine, once the module that owns them has started.
     /// </summary>
-    IServiceRegistry? Services { get; }
+    IServiceCatalog? Services { get; }
 }

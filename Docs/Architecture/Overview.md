@@ -44,20 +44,21 @@ flowchart LR
 
 ## Modules
 
-The engine modules are provided by 4 main levels (where 0 is the Kernel):
+The engine modules are provided by 6 levels (`ModuleLevel`, where 0 is the Kernel):
 
 0) Kernel - see above
 1) Core module - the first module that serves as the core of the entire system.
 2) Core modules - several separate systems divided into independent modules
 3) Stellar.Runtime - a system that controls the behavior of the engine during execution
 4) High-Level modules - the main modules representing the main API
+5) EndPoint - games and applications
    Each of these levels can only communicate directly with the lower ones, i.e. Core cannot access Stellar.Graphic.
    The only exception is Stellar.Runtime due to the specifics of its basic concept.
 
 ## Engine
 
-The Engine itself is a separate project, a collection that provides basic interfaces for connecting to the initialization
-of the engine and its main cycle.
+There is no separate Engine project. An engine is an object, `EngineInstance`, made by Stellar.Runtime with its own
+clocks, loops and services; a process can run several of them. See [Runtime](Runtime.md).
 
 ## Tools
 

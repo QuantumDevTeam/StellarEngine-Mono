@@ -1,0 +1,8 @@
+<Project Sdk="Stellar.Sdk">
+    <PropertyGroup>
+        <StellarSdkUsage>ExecutableModule</StellarSdkUsage>
+
+        <!-- The modules of the engine this project uses, separated by ';': Stellar.FileSystem;Stellar.Audio -->
+        <StellarDependencies></StellarDependencies>
+    </PropertyGroup>
+</Project>

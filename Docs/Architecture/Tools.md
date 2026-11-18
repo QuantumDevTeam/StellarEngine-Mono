@@ -29,6 +29,7 @@ Studio, and `net9.0` for everything else.
 | `Building` | Building modules: the plan, the MSBuild of Visual Studio, running programs |
 | `Templates` | Rendering the templates of `Shared/Templates` |
 | `Projects` | `.stellar.project`, file selection, project templates |
+| `Solutions` | `.sln` files with the engine in solution folders, `.stellar.solution`, the plans of `stellar run` |
 | `Installation` | `stellar install`: the installation in place |
 | `Build` | The runtime configuration, the launcher |
 | `Resources` | The resource pipeline |
@@ -83,7 +84,9 @@ Later additions win, and anything no compiler claims is packed as is by `RawReso
 | `stellar modules list` | Show the manifest in load order |
 | `stellar modules sync` | Find the modules, apply the manifest, check the rules, regenerate the catalog |
 | `stellar modules new`, `templates`, `add`, `enable`, `disable`, `reset`, `build` | See [Modules](https://quantumdevteam.github.io/StellarEngine-Mono/guide/Modules.html) |
-| `stellar project new <template> <name>` | Create a project |
+| `stellar solution sync [directory]` | Write the `.sln` again: the projects of the solution, the engine when `"Engine"` is `Sources` |
+| `stellar run [target]` | Build and run a game or a tool of the solution, or several at once; see [`.stellar.solution`](../Formats/SolutionFile.md) |
+| `stellar project new <template> <name>` | Create a solution and its project in a folder of its own; `--flat` for the project alone |
 | `stellar project info [directory]` | Show what a project selects |
 | `stellar project template list` | List the templates |
 | `stellar project generate-docs <input> <output>` | Generate Markdown documentation |

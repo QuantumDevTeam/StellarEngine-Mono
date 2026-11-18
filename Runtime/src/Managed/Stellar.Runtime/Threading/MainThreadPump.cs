@@ -1,3 +1,4 @@
+using Stellar.Kernel.Failures;
 using Stellar.Runtime.Failures;
 
 namespace Stellar.Runtime.Threading;
@@ -15,10 +16,11 @@ public static class MainThreadPump
     /// </summary>
     /// <param name="dispatcher">The dispatcher of the calling thread.</param>
     /// <param name="catcher">Catches what posted work throws.</param>
+    /// <param name="level">Where the work runs: whether a failure is fatal.</param>
     /// <param name="work">The work.</param>
     /// <typeparam name="T">The result.</typeparam>
     /// <returns>The result of the work.</returns>
-    public static T Run<T>(MainThreadDispatcher dispatcher, RuntimeCatcher catcher, Func<Task<T>> work)
+    public static T Run<T>(MainThreadDispatcher dispatcher, Catcher catcher, CatchLevel level, Func<Task<T>> work)
     {
         var previous = SynchronizationContext.Current;
         SynchronizationContext.SetSynchronizationContext(new MainThreadSynchronizationContext(dispatcher));
@@ -29,13 +31,13 @@ public static class MainThreadPump
 
             while (!task.IsCompleted)
             {
-                dispatcher.Drain(catcher);
+                dispatcher.Drain(catcher, level);
 
                 if (!task.IsCompleted)
                     dispatcher.WaitForWork(Idle);
             }
 
-            dispatcher.Drain(catcher);
+            dispatcher.Drain(catcher, level);
             return task.GetAwaiter().GetResult();
         }
         finally

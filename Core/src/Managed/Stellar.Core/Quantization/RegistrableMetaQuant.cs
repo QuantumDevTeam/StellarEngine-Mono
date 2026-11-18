@@ -1,43 +1,47 @@
 using Stellar.Core.Data.Registry;
 using Stellar.Kernel;
+using Stellar.Kernel.Data.Registry;
 using Stellar.Kernel.Quantization;
 
 namespace Stellar.Core.Quantization;
 
 /// <inheritdoc cref="IRegistrableMetaQuant"/>
-/// <typeparam name="TMeta">
-/// The concrete type of the meta quant. It selects the <see cref="MetaQuantsRegistry{TMeta}"/> it is registered in.
-/// </typeparam>
+/// <remarks>
+/// <para>A new meta quant asks the registries of the current engine to take it (implicit registration): it goes into
+/// the registry of <typeparamref name="TMeta"/>, and of every type of its hierarchy marked with
+/// <see cref="StellarRegistryAttribute"/>. A class that registers its meta quants itself turns this off with
+/// <see cref="RegistersImplicitly"/>.</para>
+/// <para>Disposing the meta quant removes it from every registry it is in, of whatever engine.</para>
+/// </remarks>
+/// <typeparam name="TMeta">The home type of the meta quant: the registry it goes into implicitly.</typeparam>
 public abstract class RegistrableMetaQuant<TMeta>
     : MetaQuant, IRegistrableMetaQuant
     where TMeta : RegistrableMetaQuant<TMeta>
 {
     /// <inheritdoc/>
-    protected RegistrableMetaQuant(IIdentifier identifier)
+    protected RegistrableMetaQuant(Identifier identifier)
         : base(identifier)
     {
-        _home = Global.CoreEngine.Current.Registry.MetaQuants<TMeta>();
-        Register(_home);
-    }
+        Registrations = new Registrations(this);
 
-    // The registry of the engine the meta quant was made in: it leaves that one, wherever it is disposed
-    private readonly IQuantumObject _home;
-
-    /// <inheritdoc/>
-    public void Register(IQuantumObject registry)
-    {
-        RegistryBinding.Register(registry, (TMeta)this);
+        // Called before the constructors of derived classes: an override returns a constant
+        if (RegistersImplicitly) Global.CoreEngine.Current.Registry.RegisterImplicitly(this, typeof(TMeta));
     }
 
     /// <inheritdoc/>
-    public void Unregister(IQuantumObject registry)
-    {
-        RegistryBinding.Unregister<TMeta>(registry, UID);
-    }
+    public IRegistrations Registrations { get; }
 
-    /// <inheritdoc/>
-    public void Dispose()
+    /// <summary>
+    /// Gets whether a new meta quant goes into the registries of the current engine by itself. <c>true</c> by default.
+    /// </summary>
+    protected virtual bool RegistersImplicitly => true;
+
+    /// <summary>
+    /// Removes the meta quant from every registry it is in.
+    /// </summary>
+    public virtual void Dispose()
     {
-        Unregister(_home);
+        Registrations.UnregisterAll();
+        GC.SuppressFinalize(this);
     }
 }

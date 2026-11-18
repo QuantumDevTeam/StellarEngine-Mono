@@ -16,7 +16,7 @@ public static class RuntimeServices
     /// </summary>
     /// <param name="context">The runtime.</param>
     /// <param name="services">The registry.</param>
-    public static void Publish(RuntimeContext context, IServiceRegistry services)
+    public static void Publish(RuntimeContext context, IServiceCatalog services)
     {
         services.Set<IEngineControl>(context.Control);
         services.Set<IMainThreadDispatcher>(context.Dispatcher);
@@ -31,7 +31,7 @@ public static class RuntimeServices
     /// Withdraws the services of the runtime.
     /// </summary>
     /// <param name="services">The registry.</param>
-    public static void Withdraw(IServiceRegistry services)
+    public static void Withdraw(IServiceCatalog services)
     {
         services.Remove<IMainLoop>();
         services.Remove<IMainLoops>();

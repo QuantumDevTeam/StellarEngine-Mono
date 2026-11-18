@@ -18,7 +18,7 @@ automatically. The manifest only holds what this installation does differently, 
     "Depth": 2
   },
   "Modules": [
-    { "Id": "Stellar.Logging", "Path": "F:/project/CS/Stellar.Logging" },
+    { "Id": "Stellar.Logging", "Path": "../Stellar.Logging" },
     { "Id": "Stellar.Physics", "Enabled": false },
     { "Id": "Stellar.Network", "Link": "Package" },
     { "Id": "Stellar.Audio", "Version": "0.8.0", "Level": "HighLevel" }
@@ -56,7 +56,7 @@ An entry with no folder, discovered or by `Path`, declares a module that exists 
 The commands edit the entries for you, and leave the manifest as it was when the result would be inconsistent:
 
 ```bash
-stellar modules add F:/project/CS/Stellar.Logging     # Path, and a NuGet.config in the folder if it has none
+stellar modules add ../Stellar.Logging     # Path, and a NuGet.config in the folder if it has none
 stellar modules disable Stellar.Physics               # Enabled = false
 stellar modules enable Stellar.Physics
 stellar modules reset Stellar.Physics                 # removes the entry

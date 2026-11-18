@@ -36,7 +36,7 @@ public sealed class EngineControl
     /// <summary>
     /// Gets the failure that caused the stop, if any.
     /// </summary>
-    public IFailure? StopFailure { get; private set; }
+    public Failure? StopFailure { get; private set; }
 
     /// <summary>
     /// Gets the exception that caused the stop, if the runtime caught one.
@@ -44,9 +44,18 @@ public sealed class EngineControl
     public Exception? StopException { get; private set; }
 
     /// <inheritdoc/>
-    public void RequestStop(StopReason reason, IFailure? failure = null)
+    public void RequestStop(StopReason reason, Failure? failure = null)
     {
         Stop(reason, failure, null);
+    }
+
+    /// <summary>
+    /// Requests a stop because of a failure the runtime caught.
+    /// </summary>
+    /// <param name="failure">The failure.</param>
+    public void RequestStop(Failure failure)
+    {
+        Stop(StopReason.CriticalError, failure, failure.Exception);
     }
 
     /// <summary>
@@ -73,7 +82,7 @@ public sealed class EngineControl
         _stop.Dispose();
     }
 
-    private void Stop(StopReason reason, IFailure? failure, Exception? exception)
+    private void Stop(StopReason reason, Failure? failure, Exception? exception)
     {
         if (Interlocked.Exchange(ref _stopRequested, 1) != 0) return;
 

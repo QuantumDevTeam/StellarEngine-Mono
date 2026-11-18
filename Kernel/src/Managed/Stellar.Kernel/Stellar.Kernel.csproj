@@ -23,9 +23,11 @@
     <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
         <Compile Remove="EntryPoint\**\*.cs"/>
         <Compile Remove="EventSystem\**\*.cs"/>
+        <Compile Remove="FileSystem\**\*.cs"/>
         <Compile Remove="Failures\**\*.cs"/>
         <Compile Remove="JobSystem\**\*.cs"/>
         <Compile Remove="Lifecycle\**\*.cs"/>
+        <Compile Remove="Profiling\**\*.cs"/>
         <Compile Remove="Threading\**\*.cs"/>
         <Compile Remove="Timing\**\*.cs"/>
     </ItemGroup>

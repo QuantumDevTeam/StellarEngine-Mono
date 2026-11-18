@@ -31,23 +31,21 @@ namespace Stellar::Core::Native
     private ref class NativeConvert abstract sealed
     {
     public:
-        static nc::Identifier ToNative(Guid uid)
+        // The identifier of the Kernel has the layout of the native one: 16 bytes, copied as they are
+        static nc::Identifier ToNative(::Stellar::Kernel::Identifier id)
         {
-            pin_ptr<Guid> pinned = &uid;
-
+            pin_ptr<::Stellar::Kernel::Identifier> pinned = &id;
             nc::Identifier::Bytes bytes;
             std::memcpy(bytes.data(), pinned, bytes.size());
-
             return nc::Identifier(bytes);
         }
 
-        static Guid ToManaged(Link<const nc::Identifier> id)
+        static ::Stellar::Kernel::Identifier ToManaged(Link<const nc::Identifier> id)
         {
-            Guid uid;
-            pin_ptr<Guid> pinned = &uid;
-
-            std::memcpy(pinned, id.GetData().data(), sizeof(Guid));
-            return uid;
+            ::Stellar::Kernel::Identifier result;
+            pin_ptr<::Stellar::Kernel::Identifier> pinned = &result;
+            std::memcpy(pinned, id.GetData().data(), id.GetData().size());
+            return result;
         }
 
         static StellarHandle ToNative(Stellar::Kernel::Interop::NativeHandle handle)
@@ -90,7 +88,7 @@ namespace Stellar::Core::Native
     managed or native by the #pragma state where it is defined, not where it is used: every instantiation of
     InvokeMember below is native, wherever NativeCall is written.
 
-        NativeCall<&nc::Data::Registry::ContainerRegistry::Count>(registry, id)
+        NativeCall<&nc::Modules::ModuleRegistry::Unload>(registry, handle)
 
     is a plain C++ call of the C++ method, nothing flat in between.
 */

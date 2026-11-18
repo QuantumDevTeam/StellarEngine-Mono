@@ -1,8 +1,6 @@
 #include "Wrapper/Native/CoreContext.cli.h"
-#include "Wrapper/Data/Registry/IdentifierRegistry.cli.h"
-#include "Wrapper/Data/Registry/LabelRegistry.cli.h"
-#include "Wrapper/Data/Registry/ContainerRegistry.cli.h"
 #include "Wrapper/Modules/ModuleRegistry.cli.h"
+#include "Wrapper/Native/NativeAllocator.cli.h"
 
 using Stellar::Kernel::Lifecycle::EngineScope;
 using Stellar::Kernel::Lifecycle::IEngineInstance;
@@ -13,9 +11,6 @@ namespace Stellar::Core::Native
         _native(native),
         _owned(owned)
     {
-        _identifiers = gcnew Data::Registry::IdentifierRegistry(this);
-        _labels = gcnew Data::Registry::LabelRegistry(this);
-        _containers = gcnew Data::Registry::ContainerRegistry(this);
         _modules = gcnew ::Stellar::Core::Modules::ModuleRegistry(this);
     }
 
@@ -39,7 +34,7 @@ namespace Stellar::Core::Native
 
     CoreContext^ CoreContext::Current::get()
     {
-        auto engine = EngineScope::Current;
+        auto engine = EngineScope::Resolve();
         return engine == nullptr ? _default : For(engine);
     }
 
@@ -68,13 +63,18 @@ namespace Stellar::Core::Native
         return true;
     }
 
-    Data::Registry::IdentifierRegistry^ CoreContext::Identifiers::get() { return _identifiers; }
-
-    Data::Registry::LabelRegistry^ CoreContext::Labels::get() { return _labels; }
-
-    Data::Registry::ContainerRegistry^ CoreContext::Containers::get() { return _containers; }
-
     ::Stellar::Core::Modules::ModuleRegistry^ CoreContext::Modules::get() { return _modules; }
+
+    NativeAllocator^ CoreContext::Allocator::get()
+    {
+        if (_allocator == nullptr)
+        {
+            auto allocator = gcnew NativeAllocator(&Native().Allocator(), false);
+            System::Threading::Interlocked::CompareExchange<NativeAllocator^>(_allocator, allocator, nullptr);
+        }
+
+        return _allocator;
+    }
 
     nc::CoreContext& CoreContext::Native()
     {

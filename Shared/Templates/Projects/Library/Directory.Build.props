@@ -1,0 +1,19 @@
+<Project>
+    <!--
+        Made by 'stellar project new': the settings of the solution {{ProjectName}}, for every project in it.
+
+        How the projects take the engine is "Engine" in {{ProjectName}}.stellar.solution: "Packages", the default,
+        or "Sources" to work on the engine itself, built from its sources in Debug and shown in the solution after
+        'stellar solution sync'. MSBuild reads no JSON, so the word is looked for in the file.
+    -->
+    <PropertyGroup>
+        <_StellarSolutionFile>$(MSBuildThisFileDirectory){{ProjectName}}.stellar.solution</_StellarSolutionFile>
+        <StellarEngine Condition="'$(StellarEngine)' == '' and Exists('$(_StellarSolutionFile)') and $([System.Text.RegularExpressions.Regex]::IsMatch($([System.IO.File]::ReadAllText('$(_StellarSolutionFile)')), '&quot;Engine&quot;\s*:\s*&quot;Sources&quot;'))">Sources</StellarEngine>
+    </PropertyGroup>
+
+    <!-- The settings above this solution still apply: the projects/ folder of an installation, for one -->
+    <PropertyGroup>
+        <_StellarParentBuildProps>$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))</_StellarParentBuildProps>
+    </PropertyGroup>
+    <Import Project="$(_StellarParentBuildProps)" Condition="'$(_StellarParentBuildProps)' != ''"/>
+</Project>

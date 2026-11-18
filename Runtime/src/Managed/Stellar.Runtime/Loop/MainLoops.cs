@@ -1,3 +1,4 @@
+using Stellar.Kernel.Failures;
 using Stellar.Kernel.Lifecycle;
 using Stellar.Runtime.Failures;
 using Stellar.Runtime.Lifecycle;
@@ -18,7 +19,7 @@ public sealed class MainLoops
 {
     private readonly object _gate = new();
     private readonly TimeSystem _time;
-    private readonly RuntimeCatcher _catcher;
+    private readonly Catcher _catcher;
     private readonly EngineControl _control;
     private readonly List<MainLoop> _loops = [];
     private readonly Dictionary<MainLoop, Thread> _threads = new(ReferenceEqualityComparer.Instance);
@@ -34,7 +35,7 @@ public sealed class MainLoops
     /// <param name="dispatcher">The dispatcher of the main thread.</param>
     /// <param name="catcher">Catches what the participants of every loop throw.</param>
     /// <param name="control">The control of the engine.</param>
-    public MainLoops(MainLoopOptions primary, TimeSystem time, MainThreadDispatcher dispatcher, RuntimeCatcher catcher,
+    public MainLoops(MainLoopOptions primary, TimeSystem time, MainThreadDispatcher dispatcher, Catcher catcher,
         EngineControl control)
     {
         _time = time;
@@ -198,7 +199,7 @@ public sealed class MainLoops
         dispatcher.Bind();
         SynchronizationContext.SetSynchronizationContext(new MainThreadSynchronizationContext(dispatcher));
 
-        var result = _catcher.Run(loop.Run, $"the loop {loop.Name}");
-        if (result.Failed) _control.RequestStop(result.Exception!);
+        var failure = _catcher.Guard(loop.Run, $"the loop {loop.Name}");
+        if (failure is not null) _control.RequestStop(failure);
     }
 }

@@ -38,6 +38,7 @@
         <ClInclude Include="Abi\**\*.h"/>
         <ClInclude Include="Graphic\**\*.h"/>
         <ClInclude Include="Math\**\*.h"/>
+        <ClInclude Include="Memory\**\*.h"/>
         <ClInclude Include="Platform\**\*.h"/>
         <ClInclude Include="Resources\**\*.h"/>
         <ClInclude Include="Video\**\*.h"/>

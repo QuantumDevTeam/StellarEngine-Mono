@@ -15,7 +15,7 @@ public static unsafe class NativeCore
     /// <summary>
     /// The version of the native exports this wrapper was written for.
     /// </summary>
-    internal static readonly ContractVersion RequiredAbi = new(2, 0);
+    internal static readonly ContractVersion RequiredAbi = new(3, 1);
 
     /// <summary>
     /// Gets the name of the wrapper: <c>Managed</c> (P/Invoke) or <c>Cli</c> (C++/CLI).

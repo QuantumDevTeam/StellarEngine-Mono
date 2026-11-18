@@ -47,7 +47,7 @@ public static class ModuleStarter
 
         var services = context.Services;
         var runContext = new RuntimeRunContext(context, services?.Find<ILogger>(),
-            services?.Find<IFailureDispatcher>(), services, context.Engine);
+            services?.Find<IFailureSystem>(), services, context.Engine);
 
         var code = entryPoint.Run(in runContext);
 
@@ -79,14 +79,13 @@ public static class ModuleStarter
 
             var reason = context.Control.IsStopRequested ? context.Control.StopReason : StopReason.Regular;
 
-            context.Catchers.Engine.Run(() =>
+            context.Catchers.Engine.Guard(() =>
                 {
                     var stopContext = new RuntimeStopContext(context, reason);
                     entryPoint.RequestStop(in stopContext);
-                }, $"the stop of {module.Id}", FailureType.Module, context);
+                }, $"the stop of {module.Id}", FailureKind.Module, context);
 
-            context.Catchers.Engine.Run(entryPoint.Dispose, $"the disposal of {module.Id}", FailureType.Module,
-                context);
+            context.Catchers.Engine.Guard(entryPoint.Dispose, $"the disposal of {module.Id}", FailureKind.Module, context);
 
             if (entryPoint is IServiceHost host && ReferenceEquals(host.Services, context.Services))
             {

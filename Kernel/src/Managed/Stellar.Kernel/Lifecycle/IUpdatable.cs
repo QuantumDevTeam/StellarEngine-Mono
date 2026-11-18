@@ -9,12 +9,10 @@ public interface IUpdatable
     : IQuant
 {
     /// <summary>
-    /// Called before <see cref="Update{TContext}"/>. Does nothing by default.
+    /// Called before <see cref="Update"/>. Does nothing by default.
     /// </summary>
     /// <param name="context">The frame context.</param>
-    /// <typeparam name="TContext">Type of the context.</typeparam>
-    void PreUpdate<TContext>(ref readonly TContext context)
-        where TContext : IFrameContext, allows ref struct
+    void PreUpdate(in FrameContext context)
     {
     }
 
@@ -22,17 +20,13 @@ public interface IUpdatable
     /// The main update of the quant.
     /// </summary>
     /// <param name="context">The frame context.</param>
-    /// <typeparam name="TContext">Type of the context.</typeparam>
-    void Update<TContext>(ref readonly TContext context)
-        where TContext : IFrameContext, allows ref struct;
+    void Update(in FrameContext context);
 
     /// <summary>
-    /// Called after <see cref="Update{TContext}"/>. Does nothing by default.
+    /// Called after <see cref="Update"/>. Does nothing by default.
     /// </summary>
     /// <param name="context">The frame context.</param>
-    /// <typeparam name="TContext">Type of the context.</typeparam>
-    void PostUpdate<TContext>(ref readonly TContext context)
-        where TContext : IFrameContext, allows ref struct
+    void PostUpdate(in FrameContext context)
     {
     }
 }

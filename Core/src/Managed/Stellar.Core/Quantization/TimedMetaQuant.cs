@@ -13,8 +13,8 @@ public class TimedMetaQuant
     /// </summary>
     /// <param name="lifetime">The lifetime. When <c>null</c>, the meta quant never expires.</param>
     /// <param name="identifier">Unique ID. A new one is created when omitted.</param>
-    public TimedMetaQuant(TimeSpan? lifetime = null, IIdentifier? identifier = null)
-        : base(identifier ?? Identifier.CreateAndRegister())
+    public TimedMetaQuant(TimeSpan? lifetime = null, Identifier? identifier = null)
+        : base(identifier ?? Identifier.New())
     {
         CreatedAt = StartAt = DateTime.UtcNow;
         Lifetime = lifetime;

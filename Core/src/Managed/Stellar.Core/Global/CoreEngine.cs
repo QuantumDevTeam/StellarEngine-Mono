@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using Stellar.Core.Data.Registry;
-using Stellar.Core.Failures;
 using Stellar.Core.Native;
 using Stellar.Core.Services;
 using Stellar.Kernel.Data.Collections;
@@ -15,7 +14,7 @@ using Stellar.Kernel.Services;
 namespace Stellar.Core.Global;
 
 /// <summary>
-/// What Stellar.Core keeps for one engine: its services, its failure levels, its registries, managed and native.
+/// What Stellar.Core keeps for one engine: its services, its failure system, its registries, managed and native.
 /// </summary>
 /// <remarks>
 /// <para>Every engine instance has its own (<see cref="For"/>): two engines in one process (an editor and the game it
@@ -30,15 +29,12 @@ public sealed class CoreEngine
 {
     private static readonly ConditionalWeakTable<IEngineInstance, CoreEngine> Engines = new();
 
-    private readonly ConcurrentDictionary<Type, object> _typedRegistries = new();
-
     private CoreEngine(string name, CoreContext native, IEngineInstance? instance)
     {
         Name = name;
         Native = native;
         Instance = instance;
-        FailureLevels = new CoreFailureLevels();
-        Registry = new CoreRegistries(this);
+        Registry = new CoreRegistries();
     }
 
     /// <summary>
@@ -49,7 +45,7 @@ public sealed class CoreEngine
     /// <summary>
     /// Gets the core of the engine of the running code, or <see cref="Default"/>.
     /// </summary>
-    public static CoreEngine Current => EngineScope.Current is { } engine ? For(engine) : Default;
+    public static CoreEngine Current => EngineScope.Resolve() is { } engine ? For(engine) : Default;
 
     /// <summary>
     /// Gets the name: the one of the engine, or <c>Default</c>.
@@ -69,22 +65,17 @@ public sealed class CoreEngine
     /// <summary>
     /// Gets the services published by the modules of this engine.
     /// </summary>
-    public IServiceRegistry Services { get; } = new ServiceRegistry();
+    public IServiceCatalog Services { get; } = new ServiceCatalog();
 
     /// <summary>
-    /// Gets the failure dispatcher, or <c>null</c> if the Core module has not started yet.
+    /// Gets the failure system, or <c>null</c> if the Core module has not started yet.
     /// </summary>
-    public IFailureDispatcher? FailureDispatcher => Services.Find<IFailureDispatcher>();
+    public IFailureSystem? Failures => Services.Find<IFailureSystem>();
 
     /// <summary>
     /// Gets the logger, or <c>null</c> if no logging module has started.
     /// </summary>
     public ILogger? Logger => Services.Find<ILogger>();
-
-    /// <summary>
-    /// Gets the base failure levels. They exist while the Core module of this engine runs.
-    /// </summary>
-    public CoreFailureLevels FailureLevels { get; }
 
     /// <summary>
     /// Gets the registries.
@@ -128,7 +119,6 @@ public sealed class CoreEngine
         if (IsDisposed || Instance is null) return;
 
         IsDisposed = true;
-        FailureLevels.Reset();
         CoreContext.Release(Instance);
     }
 
@@ -138,81 +128,76 @@ public sealed class CoreEngine
         return $"Core of {Name}";
     }
 
-    internal TRegistry Typed<TRegistry>()
-        where TRegistry : class, new()
-    {
-        return (TRegistry)_typedRegistries.GetOrAdd(typeof(TRegistry), static _ => new TRegistry());
-    }
-
     /// <summary>
-    /// The base failure levels of one engine.
+    /// The registries of one engine: one per type, made the first time it is asked for.
     /// </summary>
-    public sealed class CoreFailureLevels
-    {
-        /// <summary>Gets the level that is neither logged nor stops execution.</summary>
-        public IFailureLevel? NonCritical { get; private set; }
-
-        /// <summary>Gets the level that is logged and does not stop execution.</summary>
-        public IFailureLevel? Warning { get; private set; }
-
-        /// <summary>Gets the level that stops the current execution.</summary>
-        public IFailureLevel? Error { get; private set; }
-
-        /// <summary>Gets the level that terminates the engine.</summary>
-        public IFailureLevel? CriticalError { get; private set; }
-
-        internal void Initialize(IFailureDispatcherMeta meta)
-        {
-            NonCritical = new Failures.BaseLevels.NonCritical(meta);
-            Warning = new Failures.BaseLevels.Warning(meta);
-            Error = new Failures.BaseLevels.Error(meta);
-            CriticalError = new Failures.BaseLevels.CriticalError(meta);
-        }
-
-        internal void Reset()
-        {
-            NonCritical?.Dispose();
-            Warning?.Dispose();
-            Error?.Dispose();
-            CriticalError?.Dispose();
-
-            NonCritical = Warning = Error = CriticalError = null;
-        }
-    }
-
-    /// <summary>
-    /// The registries of one engine.
-    /// </summary>
+    /// <remarks>
+    /// <para><see cref="Of{T}"/> is the registry of a type; a <c>Player</c> derived from <c>Actor</c> is found in the
+    /// registry of actors. <see cref="RegisterImplicitly"/> is what the base classes of Stellar.Core call for a new
+    /// object: it goes into the registry of its home type and of every type of its hierarchy marked with
+    /// <see cref="StellarRegistryAttribute"/>.</para>
+    /// </remarks>
     public sealed class CoreRegistries
     {
-        private readonly CoreEngine _engine;
+        private readonly ConcurrentDictionary<Type, IRegistry> _registries = new();
 
-        internal CoreRegistries(CoreEngine engine)
+        // The registries an object of a type goes to, worked out once per type: registries are never taken away
+        private readonly ConcurrentDictionary<(Type Item, Type? Home), IUntypedRegistry[]> _routes = new();
+
+        internal CoreRegistries()
         {
-            _engine = engine;
         }
-
-        /// <summary>Gets the registry of identifiers.</summary>
-        public IRegistry<Identifier> Identifiers => _engine.Native.Identifiers;
-
-        /// <summary>Gets the registry of labels.</summary>
-        public IRegistry<Label> Labels => _engine.Native.Labels;
 
         /// <summary>Gets the registry of data containers.</summary>
-        public IRegistry<IDataContainer> DataContainers => _engine.Typed<DataContainerRegistry>();
+        public IRegistry<IDataContainer> DataContainers => Of<IDataContainer>();
 
-        /// <summary>Gets the registry of meta quants of one type.</summary>
-        public IRegistry<TMeta> MetaQuants<TMeta>()
-            where TMeta : class, IRegistrableMetaQuant
+        /// <summary>Gets the registries made so far.</summary>
+        public IReadOnlyCollection<IRegistry> All => _registries.Values.ToArray();
+
+        /// <summary>Gets the registry of a type.</summary>
+        /// <typeparam name="T">The type: a base class or a contract.</typeparam>
+        public IRegistry<T> Of<T>()
+            where T : class, IRegistrableQuantumObject
         {
-            return _engine.Typed<MetaQuantsRegistry<TMeta>>();
+            return (IRegistry<T>)_registries.GetOrAdd(typeof(T), static _ => new Registry<T>());
         }
 
-        /// <summary>Gets the registry of quants of one type.</summary>
-        public IRegistry<T> Quants<T>()
-            where T : class, IRegistrableQuant
+        /// <summary>Gets the registry of a type known at run time.</summary>
+        /// <param name="type">The type: a base class or a contract of registrable objects.</param>
+        public IRegistry Of(Type type)
         {
-            return _engine.Typed<QuantsRegistry<T>>();
+            ArgumentNullException.ThrowIfNull(type);
+            if (_registries.TryGetValue(type, out var registry)) return registry;
+
+            RegistryTypes.Validate(type);
+            return _registries.GetOrAdd(type, static type =>
+                (IRegistry)Activator.CreateInstance(typeof(Registry<>).MakeGenericType(type))!);
+        }
+
+        /// <summary>
+        /// Registers a new object where it belongs: in the registry of its home type, and of every type of its
+        /// hierarchy marked with <see cref="StellarRegistryAttribute"/>.
+        /// </summary>
+        /// <param name="item">The object.</param>
+        /// <param name="home">The type it is registered as, whatever its hierarchy; <c>null</c> for none.</param>
+        public void RegisterImplicitly(IRegistrableQuantumObject item, Type? home)
+        {
+            ArgumentNullException.ThrowIfNull(item);
+
+            var route = _routes.GetOrAdd((item.GetType(), home),
+                static (key, registries) => registries.Route(key.Item, key.Home), this);
+            foreach (var registry in route) registry.Register(item);
+        }
+
+        private IUntypedRegistry[] Route(Type item, Type? home)
+        {
+            var route = new List<IUntypedRegistry>();
+            if (home is not null) route.Add((IUntypedRegistry)Of(home));
+            foreach (var type in RegistryTypes.MarkedIn(item))
+                if (type != home)
+                    route.Add((IUntypedRegistry)Of(type));
+
+            return [.. route];
         }
     }
 }

@@ -1,7 +1,9 @@
+using Stellar.Core.Data.Collections;
 using Stellar.Core.EntryPoints;
 using Stellar.Core.Global;
 using Stellar.Core.Native;
 using Stellar.Core.Quantization;
+using Stellar.Kernel;
 using Stellar.Kernel.Configuration;
 using Stellar.Kernel.EntryPoint;
 using Stellar.Kernel.Lifecycle;
@@ -17,34 +19,28 @@ namespace Stellar.Core.Tests;
 public class EngineInstanceTests
 {
     [Fact]
-    public void TwoEngines_HaveTheirOwnLabels_ServicesAndRegistries()
+    public void TwoEngines_HaveTheirOwnServicesAndRegistries()
     {
         var editor = new FakeEngine("Editor");
         var game = new FakeEngine("Game");
-
-        Label? editorPlayer;
-        Label? gamePlayer;
+        Table<Service> table;
 
         using (EngineScope.Enter(editor))
         {
-            editorPlayer = Label.Create("Player");
+            table = new Table<Service>();
             Engine.Services.Set(new Marker("editor"));
         }
 
         using (EngineScope.Enter(game))
         {
-            gamePlayer = Label.Create("Player");
             Engine.Services.Find<Marker>().Should().BeNull();
-            Label.Get("Player")!.UID.Should().Be(gamePlayer!.UID);
+            Engine.Registry.DataContainers.Exists(table.UID).Should().BeFalse();
         }
-
-        editorPlayer.Should().NotBeNull();
-        gamePlayer.Should().NotBeNull();
-        editorPlayer!.UID.Should().NotBe(gamePlayer!.UID);
 
         CoreEngine.For(editor).Services.Find<Marker>()!.Name.Should().Be("editor");
         CoreEngine.For(editor).Native.Should().NotBeSameAs(CoreEngine.For(game).Native);
-        CoreEngine.Default.Registry.Labels.Exists(editorPlayer.UID).Should().BeFalse();
+        CoreEngine.For(editor).Registry.DataContainers.Exists(table.UID).Should().BeTrue();
+        CoreEngine.Default.Registry.DataContainers.Exists(table.UID).Should().BeFalse();
 
         CoreEngine.Release(editor).Should().BeTrue();
         CoreEngine.Release(game).Should().BeTrue();
@@ -96,15 +92,15 @@ public class EngineInstanceTests
             service = new Service();
         }
 
-        CoreEngine.For(first).Registry.Quants<Service>().Exists(service.UID).Should().BeTrue();
-        CoreEngine.For(second).Registry.Quants<Service>().Exists(service.UID).Should().BeFalse();
+        CoreEngine.For(first).Registry.Of<Service>().Exists(service.UID).Should().BeTrue();
+        CoreEngine.For(second).Registry.Of<Service>().Exists(service.UID).Should().BeFalse();
 
         using (EngineScope.Enter(second))
         {
             service.Dispose();
         }
 
-        CoreEngine.For(first).Registry.Quants<Service>().Exists(service.UID).Should().BeFalse();
+        CoreEngine.For(first).Registry.Of<Service>().Exists(service.UID).Should().BeFalse();
 
         CoreEngine.Release(first);
         CoreEngine.Release(second);
@@ -115,12 +111,11 @@ public class EngineInstanceTests
     {
         var engine = new FakeEngine("Short");
         var native = CoreEngine.For(engine).Native;
-        native.Identifiers.Register(Identifier.Create()).Should().BeTrue();
 
         CoreEngine.Release(engine).Should().BeTrue();
 
         native.IsDisposed.Should().BeTrue();
-        ((Action)(() => _ = native.Identifiers.Size)).Should().Throw<ObjectDisposedException>();
+        ((Action)(() => _ = native.Modules.Count)).Should().Throw<ObjectDisposedException>();
         CoreEngine.Release(engine).Should().BeFalse();
     }
 
@@ -134,9 +129,8 @@ public class EngineInstanceTests
         entry.Run(in context).Should().Be(0);
 
         entry.Core.Instance.Should().BeSameAs(engine);
-        CoreEngine.For(engine).FailureDispatcher.Should().NotBeNull();
-        CoreEngine.For(engine).FailureLevels.Error.Should().NotBeNull();
-        CoreEngine.Default.FailureLevels.Error.Should().BeNull();
+        CoreEngine.For(engine).Failures.Should().NotBeNull();
+        CoreEngine.Default.Failures.Should().BeNull();
 
         entry.Dispose();
 
@@ -161,6 +155,6 @@ public class EngineInstanceTests
 
         public IMainThreadDispatcher Dispatcher => throw new NotSupportedException();
 
-        public IServiceRegistry? Services => CoreEngine.For(this).Services;
+        public IServiceCatalog? Services => CoreEngine.For(this).Services;
     }
 }

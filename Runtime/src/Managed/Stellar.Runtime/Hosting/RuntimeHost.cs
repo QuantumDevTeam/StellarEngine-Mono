@@ -79,7 +79,7 @@ public sealed class RuntimeHost
 
         try
         {
-            var failed = MainThreadPump.Run(Dispatcher, Context.Catchers.Engine, () => _pipeline.RunAsync(Context));
+            var failed = MainThreadPump.Run(Dispatcher, Context.Catchers.Engine, CatchLevel.Engine, () => _pipeline.RunAsync(Context));
             return ExitCode(failed);
         }
         catch (Exception exception)
@@ -126,7 +126,7 @@ public sealed class RuntimeHost
     {
         arguments.SetObserved();
 
-        var result = Context.Catchers.MainLoop.Handle(arguments.Exception, "an unobserved task");
-        if (result.MustStop) Control.RequestStop(arguments.Exception);
+        var failure = Context.Catchers.MainLoop.Report(arguments.Exception, "an unobserved task");
+        if (RuntimeCatchers.MustStop(CatchLevel.MainLoop, failure)) Control.RequestStop(failure!);
     }
 }

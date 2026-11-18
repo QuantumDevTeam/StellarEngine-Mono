@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using Stellar.Core.Data.Registry;
 using Stellar.Core.Modules;
 using Stellar.Kernel.Lifecycle;
 
@@ -11,7 +10,7 @@ namespace Stellar.Core.Native;
 /// <remarks>
 /// <para>Every engine instance has its own context (<see cref="For"/>), so two engines in one process never see
 /// each other's identifiers or labels. <see cref="Current"/> is the context of the engine of the running code
-/// (<see cref="EngineScope"/>), or <see cref="Default"/> outside any engine.</para>
+/// (<see cref="EngineScope"/>), or <see cref="Default"/> outside any engine as <see cref="EngineScope.Detached"/> allows.</para>
 /// <para>A context made with the constructor belongs to its maker, who disposes it.</para>
 /// </remarks>
 public sealed unsafe class CoreContext
@@ -20,15 +19,13 @@ public sealed unsafe class CoreContext
     private static readonly ConditionalWeakTable<IEngineInstance, CoreContext> Engines = new();
 
     private nint _handle;
+    private NativeAllocator? _allocator;
     private readonly bool _owned;
 
     private CoreContext(nint handle, bool owned)
     {
         _handle = handle;
         _owned = owned;
-        Identifiers = new IdentifierRegistry(this);
-        Labels = new LabelRegistry(this);
-        Containers = new ContainerRegistry(this);
         Modules = new ModuleRegistry(this);
     }
 
@@ -48,7 +45,7 @@ public sealed unsafe class CoreContext
     public static CoreContext Default { get; } = new(0, false);
 
     /// <summary>Gets the context of the engine of the running code, or the default one.</summary>
-    public static CoreContext Current => EngineScope.Current is { } engine ? For(engine) : Default;
+    public static CoreContext Current => EngineScope.Resolve() is { } engine ? For(engine) : Default;
 
     /// <summary>Gets whether this is the default context.</summary>
     public bool IsDefault => !_owned;
@@ -56,17 +53,16 @@ public sealed unsafe class CoreContext
     /// <summary>Gets whether the context was disposed.</summary>
     public bool IsDisposed => _owned && _handle == 0;
 
-    /// <summary>Gets the registry of identifiers.</summary>
-    public IdentifierRegistry Identifiers { get; }
-
-    /// <summary>Gets the registry of labels.</summary>
-    public LabelRegistry Labels { get; }
-
-    /// <summary>Gets the registry of the membership of containers.</summary>
-    public ContainerRegistry Containers { get; }
-
     /// <summary>Gets the registry of native modules.</summary>
     public ModuleRegistry Modules { get; }
+
+    /// <summary>
+    /// Gets the allocator of the engine, made on first use. It outlives the context while blocks it gave are not
+    /// freed.
+    /// </summary>
+    public NativeAllocator Allocator =>
+        _allocator ?? Interlocked.CompareExchange(ref _allocator, new NativeAllocator(AllocatorOf(Handle), adopt: false), null)
+        ?? _allocator;
 
     /// <summary>The handle the exports take; 0 for the default context.</summary>
     internal nint Handle => IsDisposed ? throw new ObjectDisposedException(nameof(CoreContext)) : _handle;
@@ -97,6 +93,13 @@ public sealed unsafe class CoreContext
     {
         Destroy();
         GC.SuppressFinalize(this);
+    }
+
+    private static nint AllocatorOf(nint context)
+    {
+        nint allocator;
+        Exports.Check(Exports.stellar_core_context_get_allocator(context, &allocator));
+        return allocator;
     }
 
     private static nint Create()

@@ -6,13 +6,6 @@
 
 #include "Wrapper/Interop.cli.h"
 
-namespace Stellar::Core::Data::Registry
-{
-    ref class IdentifierRegistry;
-    ref class LabelRegistry;
-    ref class ContainerRegistry;
-}
-
 namespace Stellar::Core::Modules
 {
     ref class ModuleRegistry;
@@ -20,6 +13,8 @@ namespace Stellar::Core::Modules
 
 namespace Stellar::Core::Native
 {
+    ref class NativeAllocator;
+
     using namespace System;
     using namespace System::Runtime::CompilerServices;
 
@@ -29,7 +24,7 @@ namespace Stellar::Core::Native
     /// <remarks>
     /// <para>Every engine instance has its own context (<see cref="For"/>), so two engines in one process never see
     /// each other's identifiers or labels. <see cref="Current"/> is the context of the engine of the running code
-    /// (<see cref="Stellar::Kernel::Lifecycle::EngineScope"/>), or <see cref="Default"/> outside any engine.</para>
+    /// (<see cref="Stellar::Kernel::Lifecycle::EngineScope"/>), or <see cref="Default"/> outside any engine as <see cref="Stellar::Kernel::Lifecycle::EngineScope::Detached"/> allows.</para>
     /// <para>A context made with the constructor belongs to its maker, who disposes it.</para>
     /// </remarks>
     public ref class CoreContext sealed : IDisposable
@@ -40,10 +35,8 @@ namespace Stellar::Core::Native
 
         nc::CoreContext* _native;
         bool _owned;
-        Data::Registry::IdentifierRegistry^ _identifiers;
-        Data::Registry::LabelRegistry^ _labels;
-        Data::Registry::ContainerRegistry^ _containers;
         ::Stellar::Core::Modules::ModuleRegistry^ _modules;
+        NativeAllocator^ _allocator;
 
         CoreContext(nc::CoreContext* native, bool owned);
 
@@ -74,17 +67,14 @@ namespace Stellar::Core::Native
         /// <summary>Gets whether the context was disposed.</summary>
         property bool IsDisposed { bool get() { return _native == nullptr; } }
 
-        /// <summary>Gets the registry of identifiers.</summary>
-        property Data::Registry::IdentifierRegistry^ Identifiers { Data::Registry::IdentifierRegistry^ get(); }
-
-        /// <summary>Gets the registry of labels.</summary>
-        property Data::Registry::LabelRegistry^ Labels { Data::Registry::LabelRegistry^ get(); }
-
-        /// <summary>Gets the registry of the membership of containers.</summary>
-        property Data::Registry::ContainerRegistry^ Containers { Data::Registry::ContainerRegistry^ get(); }
-
         /// <summary>Gets the registry of native modules.</summary>
         property ::Stellar::Core::Modules::ModuleRegistry^ Modules { ::Stellar::Core::Modules::ModuleRegistry^ get(); }
+
+        /// <summary>
+        /// Gets the allocator of the engine, made on first use. It outlives the context while blocks it gave are not
+        /// freed.
+        /// </summary>
+        property NativeAllocator^ Allocator { NativeAllocator^ get(); }
 
     internal:
         nc::CoreContext& Native();

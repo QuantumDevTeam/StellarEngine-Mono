@@ -17,8 +17,8 @@ engine, and it builds from a clean clone.
 |---|---|---|
 | `Kernel/src/Managed` | `Stellar.Kernel` | Managed contracts: how the engine is used |
 | `Kernel/src/Native` | `Stellar.Native.Kernel` | Native contracts: what modules implement, and the C ABI |
-| `Core/src/Managed` | `Stellar.Core` | Quants, data containers, rosters, failures, entry points: the managed logic |
-| `Core/src/Native` | `Stellar.Native.Core` | The native core: identifiers, labels, registries, containers, collections, modules |
+| `Core/src/Managed` | `Stellar.Core` | Quants, registries, catalogs, collections and containers, failures, entry points: the managed logic |
+| `Core/src/Native` | `Stellar.Native.Core` | The native core: identifiers, labels, native collections, modules |
 | `Core/src/NativeInterop` | `Stellar.Native.Core.Wrapper.Cli` | The Windows wrapper of the native core, in C++/CLI |
 | | `Stellar.Native.Core.Wrapper.Managed` | The portable wrapper of the native core, in C# |
 | | `Stellar.Native.Core.Wrapper.PInvoke` | The flat exports the portable wrapper calls |
@@ -141,4 +141,5 @@ Reference:
 Workflow:
 
 - [Contributing](CONTRIBUTING.md), [Git policy](Docs/Engine/GitPolicy.md), [versioning](Docs/Engine/Versioning.md)
+- [Migrating to 0.9](Docs/Migration-0.9.md)
 - [Migrating modules to 0.8](Docs/Migration-0.8.md)

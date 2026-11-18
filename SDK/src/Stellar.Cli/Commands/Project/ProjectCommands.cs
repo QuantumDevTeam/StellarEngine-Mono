@@ -20,6 +20,10 @@ public sealed class NewProjectSettings
     [CommandOption("-o|--output <DIRECTORY>")]
     [Description("The directory to create. $STELLAR_ROOT/projects/<NAME> when omitted")]
     public string? Output { get; set; }
+
+    [CommandOption("--flat")]
+    [Description("The project in the directory itself, without a solution")]
+    public bool Flat { get; set; }
 }
 
 public sealed class NewProjectCommand
@@ -31,7 +35,7 @@ public sealed class NewProjectCommand
         var output = settings.Output ?? Path.Combine(home.Projects, settings.Name);
 
         new ProjectScaffolder(Path.Combine(home.Templates, "Projects"), ConsoleToolLogger.Instance)
-            .Create(settings.Template, settings.Name, output, home);
+            .Create(settings.Template, settings.Name, output, home, settings.Flat);
 
         return 0;
     }

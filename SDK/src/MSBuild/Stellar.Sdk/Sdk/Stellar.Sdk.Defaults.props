@@ -3,11 +3,15 @@
         Defaults that the installation (config/Stellar.Sdk.props) and the project may replace.
 
         How modules are referenced:
-          StellarPrecompiled=false  sources, through ProjectReference: the default of Debug
-          StellarPrecompiled=true   the local NuGet feed, through PackageReference: the default of everything else
+          StellarPrecompiled=false  sources, through ProjectReference
+          StellarPrecompiled=true   the local NuGet feed, through PackageReference
+        The engine side (StellarIsEngineProject: the modules and tools of the installation) takes sources in Debug
+        and packages otherwise. A game takes packages, or sources in Debug when its solution says "Engine": "Sources"
+        ($(StellarEngine), set by the Directory.Build.props of the solution): that default is set in
+        Stellar.Sdk.References.targets, after the project and its Directory.Build.props.
         A module may be pinned to one of the two by the manifest ("Link"), whatever this says.
     -->
-    <PropertyGroup Condition="'$(StellarPrecompiled)' == ''">
+    <PropertyGroup Condition="'$(StellarPrecompiled)' == '' and '$(StellarIsEngineProject)' == 'true'">
         <StellarPrecompiled Condition="'$(Configuration)' == 'Debug' or '$(Configuration)' == ''">false</StellarPrecompiled>
         <StellarPrecompiled Condition="'$(StellarPrecompiled)' == ''">true</StellarPrecompiled>
     </PropertyGroup>

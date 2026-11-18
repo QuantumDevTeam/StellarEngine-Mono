@@ -13,7 +13,7 @@ public interface IEventPostContext<TEvent>
     /// <summary>
     /// Gets or sets the queue to post the event to, or <c>null</c> for the default one.
     /// </summary>
-    ILabel? QueueToPost { get; set; }
+    Label? QueueToPost { get; set; }
 
     /// <summary>
     /// Gets or sets the event being posted.

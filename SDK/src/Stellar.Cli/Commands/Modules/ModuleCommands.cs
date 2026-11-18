@@ -257,6 +257,10 @@ public sealed class BuildModulesCommand
 
         new ModuleBuilder(new ProcessRunner(ConsoleToolLogger.Instance), ConsoleToolLogger.Instance).Run(steps,
             installation.Root);
+
+        // Packed again under the same versions: the games must not keep the copies NuGet unpacked before
+        if (settings.Pack)
+            Stellar.Tools.Installation.PackageCache.RefreshStale(installation.Packages, null, ConsoleToolLogger.Instance);
         return 0;
     }
 }

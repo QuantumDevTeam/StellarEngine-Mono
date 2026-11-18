@@ -9,3 +9,5 @@
 
 #include "Abi/Abi.h"
 #include "Abi/Module.h"
+#include "Abi/Memory.h"
+#include "Abi/Profiling.h"

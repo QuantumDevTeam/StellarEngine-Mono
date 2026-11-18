@@ -18,6 +18,6 @@ namespace Stellar::Core::Native
     void NativeCore::EnsureAvailable()
     {
         // Linked at load time: reaching here means Stellar.Native.Core.dll was found. Touch it to be sure.
-        (void)nc::CoreContext::Default().Identifiers().size();
+        (void)nc::CoreContext::Default().Modules();
     }
 }

@@ -15,5 +15,5 @@ public interface IServiceHost
     /// <summary>
     /// Gets the services of the engine.
     /// </summary>
-    IServiceRegistry Services { get; }
+    IServiceCatalog Services { get; }
 }

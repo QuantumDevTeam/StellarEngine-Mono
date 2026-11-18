@@ -1,58 +1,76 @@
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Stellar.Kernel.Quantization;
 
 namespace Stellar.Kernel.Data.Collections;
 
 /// <summary>
-/// Represents a quantum object that can contain and manage other identifiable quantum objects.
+/// A container of the engine: data of the world held by a quant, always in the registry of containers of its engine.
 /// </summary>
 /// <remarks>
-/// <para>A data container is a registrable quant (<see cref="IRegistrableQuant"/>) that acts as a collection
-/// for objects implementing <see cref="IIdentifiableQuantumObject"/>. It supports lookup by identifier
-/// and basic membership checks.</para>
-/// <para>Containers are used for scene graphs, entity holders, asset caches, and similar structures.</para>
+/// <para>A container has an identity, so it is found anywhere by its identifier: the registry of containers gives
+/// the container, the container gives the item. A roster of actors and a player in it:
+/// <c>containers.Get&lt;Roster&lt;Actor&gt;&gt;(rosterId).Get&lt;Player&gt;(playerId)</c>.</para>
+/// <para>A sealed container never changes again.</para>
 /// </remarks>
-/// <example>
-/// Using a container:
-/// <code>
-/// IDataContainer container = ...;
-/// IIdentifiableQuantumObject obj = ...;
-/// container.ContainsKey(obj.UID); // true if stored
-/// var retrieved = container.Get(obj.UID);
-/// </code>
-/// </example>
 public interface IDataContainer
     : IRegistrableQuant
 {
     /// <summary>
-    /// Retrieves a stored quantum object by its identifier.
+    /// Gets the number of items.
     /// </summary>
-    /// <param name="id">The unique identifier of the object.</param>
-    /// <returns>The object if found; otherwise, <c>null</c>.</returns>
-    IIdentifiableQuantumObject? Get(IIdentifier id);
-
-    /// <summary>
-    /// Checks whether the container has an object with the specified key.
-    /// </summary>
-    /// <param name="key">The identifier to check.</param>
-    /// <returns><c>true</c> if an object with the given key exists; otherwise, <c>false</c>.</returns>
-    bool ContainsKey(IIdentifier key);
-
-    /// <summary>
-    /// Checks whether the container holds the specified object instance.
-    /// </summary>
-    /// <param name="obj">The object to look for.</param>
-    /// <returns><c>true</c> if the object is present; otherwise, <c>false</c>.</returns>
-    bool Contains(IIdentifiableQuantumObject obj);
-
-    /// <summary>
-    /// Gets the number of objects currently stored in the container.
-    /// </summary>
-    /// <value>The total count of contained objects.</value>
     int Count { get; }
 
     /// <summary>
-    /// Gets a value indicating whether the container is empty.
+    /// Gets whether the container is empty.
     /// </summary>
-    /// <value><c>true</c> if <see cref="Count"/> is zero; otherwise, <c>false</c>.</value>
     bool IsEmpty { get; }
+
+    /// <summary>
+    /// Gets whether the container is sealed: it never changes again.
+    /// </summary>
+    bool IsSealed { get; }
+}
+
+/// <summary>
+/// A container of items by key: a table by identifier, a data table by row name.
+/// </summary>
+/// <typeparam name="TKey">The key of an item.</typeparam>
+/// <typeparam name="TValue">The item.</typeparam>
+public interface IDataContainer<TKey, TValue>
+    : IDataContainer, IEnumerable<TValue>
+    where TKey : notnull
+{
+    /// <summary>
+    /// Gets a snapshot of the keys.
+    /// </summary>
+    IReadOnlyCollection<TKey> Keys { get; }
+
+    /// <summary>
+    /// Gets a snapshot of the items.
+    /// </summary>
+    IReadOnlyCollection<TValue> Values { get; }
+
+    /// <summary>
+    /// Gets whether an item has the key.
+    /// </summary>
+    /// <param name="key">The key.</param>
+    /// <returns><c>true</c> if one has.</returns>
+    bool ContainsKey(TKey key);
+
+    /// <summary>
+    /// Finds an item.
+    /// </summary>
+    /// <param name="key">Its key.</param>
+    /// <param name="value">The item, or <c>default</c>.</param>
+    /// <returns><c>true</c> if the container has it.</returns>
+    bool TryGet(TKey key, [MaybeNullWhen(false)] out TValue value);
+
+    /// <summary>
+    /// Gets an item.
+    /// </summary>
+    /// <param name="key">Its key.</param>
+    /// <returns>The item.</returns>
+    /// <exception cref="KeyNotFoundException">Thrown if the container has none with the key.</exception>
+    TValue Get(TKey key);
 }

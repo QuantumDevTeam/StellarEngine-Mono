@@ -1,5 +1,0 @@
-<Project Sdk="Stellar.Sdk">
-    <PropertyGroup>
-        <StellarSdkUsage>Module</StellarSdkUsage>
-    </PropertyGroup>
-</Project>

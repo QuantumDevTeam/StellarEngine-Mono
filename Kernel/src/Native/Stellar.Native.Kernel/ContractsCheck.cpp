@@ -16,4 +16,6 @@
 #include "include/Kernel/video.h"
 #include "include/Kernel/video_contracts.h"
 
+#include "include/Kernel/memory.h"
+
 #include "Resources/ResourceContainer.h"

@@ -29,7 +29,7 @@ stellar modules build --tests --pack
 A module developed in its own repository stays there:
 
 ```bash
-stellar modules add F:/project/CS/Stellar.Logging
+stellar modules add ../Stellar.Logging
 ```
 
 It is then part of the installation exactly like a folder of `modules/`, and gets a `NuGet.config` pointing at the
@@ -62,7 +62,10 @@ Every property: [Sdk.Properties](../Reference/Sdk.Properties.md).
 
 ## How references are made
 
-Each `StellarDependency` is looked up in the catalog, and becomes:
+A game lists its modules in a property, `<StellarDependencies>Stellar.FileSystem;Stellar.Audio</StellarDependencies>`,
+or declares one as a package, `<PackageReference Include="Stellar.FileSystem"/>`; a module gets its dependencies from its
+descriptor, as `StellarDependency` items. Each is looked up in the catalog, and
+becomes:
 
 | | `Link` of the manifest | `StellarPrecompiled` |
 |---|---|---|
@@ -78,6 +81,10 @@ The build of an application writes the modules it loads into its runtime configu
 on, directly or not, every module after the ones it depends on. `Stellar.Runtime` loads them in that order, each module
 above the core into a load context of its own, starts their entry points level by level, then the application. See
 [Runtime](../Architecture/Runtime.md).
+
+An entry point (a `StellarEntryPoint` marked `[StellarEntryPoint]`) is optional for a module: one without it is a
+library, loaded for the modules that use it, and takes no part in the start, the stop or the loops of the engine.
+The application must have one.
 
 ## The native part
 

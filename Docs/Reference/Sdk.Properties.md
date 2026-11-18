@@ -28,7 +28,8 @@ The project wins over `config/`, `config/` over the defaults.
 | `StellarHome` | `STELLAR_HOME`, or `~/.stellar` | The registry of the user, read only when nothing else gave `StellarRoot` |
 | `StellarPackagesDir` | `$(StellarRoot)packages/` | The local feed |
 | `StellarArtifactsDir` | `$(StellarRoot)artifacts/` | Everything built: `bin/` and `obj/`, see [the layout](https://quantumdevteam.github.io/StellarEngine-Mono/guide/Repository.html) |
-| `StellarUseArtifactsOutput` | `true` | `false`: the plain `bin/` and `obj/` next to the project |
+| `StellarIsEngineProject` | `true` under `$(StellarRoot)`, but in `projects/` | The engine side (modules, tools): sources in Debug, `artifacts/`. A game or a library is not |
+| `StellarUseArtifactsOutput` | `true` on the engine side, `false` for games | `false`: the plain `bin/` and `obj/` next to the project |
 | `StellarArtifactsName` | `$(MSBuildProjectName)` | The folder of the project in `artifacts/bin` and `artifacts/obj` |
 | `StellarModuleCatalog` | `$(StellarRoot)manifests/.generated/stellar.modules.props` | The catalog of modules |
 | `StellarUseModuleCatalog` | `true` | `false`: only the modules of the core exist |
@@ -41,8 +42,12 @@ The project wins over `config/`, `config/` over the defaults.
 
 | Property / item | Default | Meaning |
 |---|---|---|
-| `<StellarDependency Include="Id"/>` | the `Dependencies` of the descriptor | A module the project depends on |
-| `StellarPrecompiled` | `false` in Debug, `true` otherwise | Sources (`ProjectReference`) or packages (`PackageReference`); `Link` of the manifest wins per module |
+| `StellarDependencies` | | The modules the project depends on, separated by `;`: how a game declares them |
+| `<PackageReference Include="Id"/>` | | A module the project depends on, declared as a package: the version is the one of the installation |
+| `<StellarDependency Include="Id"/>` | the `Dependencies` of the descriptor | A module the project depends on, as a module descriptor declares it |
+| `StellarCheckSolution` | `true` | `false`: no warning for a module built from sources and missing from the solution |
+| `StellarPrecompiled` | engine side: `false` in Debug, `true` otherwise; games: `true`, `false` in Debug with `StellarEngine=Sources` | Sources (`ProjectReference`) or packages (`PackageReference`); `Link` of the manifest wins per module |
+| `StellarEngine` | from `"Engine"` of the `.stellar.solution` | `Sources`: the games of the solution build the engine from its sources in Debug |
 | `StellarImplicitKernelReference` | `true` | Reference `Stellar.Kernel` |
 | `StellarImplicitCoreReference` | `true` | Reference `Stellar.Core` |
 | `StellarImplicitRuntimeReference` | `true` for `ExecutableModule` | Reference `Stellar.Runtime`, which the launcher calls |

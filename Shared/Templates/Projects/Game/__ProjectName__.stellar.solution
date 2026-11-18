@@ -1,0 +1,13 @@
+{
+  "$schema": "{{StellarSchemasUri}}stellar.solution.schema.json",
+  "Engine": "Packages",
+  "Run": {
+    "Default": "{{ProjectName}}",
+    "Profiles": {
+      "{{ProjectName}}": {
+        "Project": "{{ProjectName}}/{{ProjectName}}.csproj",
+        "Arguments": []
+      }
+    }
+  }
+}

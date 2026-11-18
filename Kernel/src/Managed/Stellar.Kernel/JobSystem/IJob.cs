@@ -35,7 +35,7 @@ public interface IJob
     /// <para>Circular dependencies are not allowed and may cause deadlock; it is the caller's responsibility
     /// to avoid them.</para>
     /// </remarks>
-    IReadOnlyList<IIdentifier> Dependencies { get; }
+    IReadOnlyList<Identifier> Dependencies { get; }
 
     /// <summary>
     /// Executes the task’s logic.

@@ -29,12 +29,12 @@ public interface IEventBus
     /// <summary>
     /// Subscribes a handler to a queue, for one event type or for all of them.
     /// </summary>
-    void Subscribe(IEventHandler handler, ILabel queue, IEventType? eventType = null, float handlerPriority = 0);
+    void Subscribe(IEventHandler handler, Label queue, IEventType? eventType = null, float handlerPriority = 0);
 
     /// <summary>
     /// Removes a subscription.
     /// </summary>
-    void Unsubscribe(IEventHandler handler, ILabel queue, IEventType? eventType = null);
+    void Unsubscribe(IEventHandler handler, Label queue, IEventType? eventType = null);
 
     /// <summary>
     /// Delivers events to the handlers right away.
@@ -61,12 +61,12 @@ public interface IEventBus
     /// <summary>
     /// Delivers the queued events of one queue, or of all queues when it is <c>null</c>.
     /// </summary>
-    void Process(ILabel? queue);
+    void Process(Label? queue);
 
     /// <summary>
     /// Delivers the queued events asynchronously.
     /// </summary>
-    Task ProcessAsync(ILabel? queue, CancellationToken cancellationToken = default);
+    Task ProcessAsync(Label? queue, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Removes all queued events.

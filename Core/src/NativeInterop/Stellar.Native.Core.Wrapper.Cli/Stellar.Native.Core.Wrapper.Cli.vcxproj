@@ -50,14 +50,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ClCompile Include="Wrapper\Identifier.cpp"/>
-        <ClCompile Include="Wrapper\Label.cpp"/>
-        <ClCompile Include="Wrapper\Data\Registry\IdentifierRegistry.cpp"/>
-        <ClCompile Include="Wrapper\Data\Registry\LabelRegistry.cpp"/>
-        <ClCompile Include="Wrapper\Data\Registry\ContainerRegistry.cpp"/>
         <ClCompile Include="Wrapper\Modules\ModuleRegistry.cpp"/>
         <ClCompile Include="Wrapper\Native\NativeCore.cpp"/>
         <ClCompile Include="Wrapper\Native\CoreContext.cpp"/>
+        <ClCompile Include="Wrapper\Native\NativeAllocator.cpp"/>
     </ItemGroup>
 
     <ItemGroup>

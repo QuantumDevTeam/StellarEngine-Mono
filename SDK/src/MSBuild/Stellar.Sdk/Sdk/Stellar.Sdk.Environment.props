@@ -33,4 +33,20 @@
         <StellarArtifactsDir Condition="'$(StellarArtifactsDir)' == ''">$(StellarRoot)artifacts/</StellarArtifactsDir>
         <StellarModuleCatalog Condition="'$(StellarModuleCatalog)' == ''">$(StellarRoot)manifests/.generated/stellar.modules.props</StellarModuleCatalog>
     </PropertyGroup>
+
+    <!--
+        Which side of the engine a project is on. The engine side is everything of the installation but its games:
+        the modules, the tools. It works on the engine as it is (sources in Debug) and builds into artifacts/. A game
+        or a library, in projects/ or anywhere else, takes the engine from its packages and keeps bin/ and obj/ next
+        to itself, as any .NET project.
+    -->
+    <PropertyGroup Condition="'$(StellarIsEngineProject)' == '' and '$(StellarRoot)' != ''">
+        <_StellarProjectFolder>$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)').ToLowerInvariant())</_StellarProjectFolder>
+        <_StellarRootFolder>$([MSBuild]::NormalizeDirectory('$(StellarRoot)').ToLowerInvariant())</_StellarRootFolder>
+        <StellarIsEngineProject Condition="$(_StellarProjectFolder.StartsWith('$(_StellarRootFolder)')) and !$(_StellarProjectFolder.StartsWith('$(_StellarRootFolder)projects'))">true</StellarIsEngineProject>
+    </PropertyGroup>
+    <PropertyGroup>
+        <StellarIsEngineProject Condition="'$(StellarIsEngineProject)' == ''">false</StellarIsEngineProject>
+        <StellarUseArtifactsOutput Condition="'$(StellarUseArtifactsOutput)' == '' and '$(StellarIsEngineProject)' != 'true'">false</StellarUseArtifactsOutput>
+    </PropertyGroup>
 </Project>

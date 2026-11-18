@@ -3,6 +3,7 @@
 #include "include/Core/core.h"
 #include "include/Core/core_contracts.h"
 #include "include/PInvoke/exports.h"
+#include "include/Kernel/memory.h"
 
 #include <atomic>
 #include <cstdio>
@@ -17,6 +18,12 @@ using namespace Stellar::Native::Core;
 using namespace Stellar::Native::Core::Data::Collections;
 using namespace Stellar::Native::Core::Data::Registry;
 using namespace Stellar::Native::Core::Modules;
+using Stellar::Native::Core::Memory::Allocator;
+using Stellar::Native::Kernel::Memory::NativeList;
+using Stellar::Native::Kernel::Memory::NativeListLock;
+using Stellar::Native::Kernel::Memory::NativeListReadScope;
+using Stellar::Native::Kernel::Memory::NativeListView;
+using Stellar::Native::Kernel::Memory::NativeListWriteScope;
 
 namespace
 {
@@ -78,49 +85,6 @@ namespace
         CHECK(Identifier::Parse(first.ToString()) == first);
         CHECK(std::hash<Identifier>{}(first) == first.GetHashCode());
         CHECK(Identifier(first.ToAbi()) == first);
-    }
-
-    void TestIdentifierRegistry()
-    {
-        CoreContext context;
-        auto& registry = context.Identifiers();
-        const auto id = Identifier::Create();
-
-        CHECK(registry.Register(id));
-        CHECK(!registry.Register(id));
-        CHECK(registry.Contains(id));
-        CHECK(registry.Unregister(id));
-        CHECK(!registry.Unregister(id));
-        CHECK(!registry.Contains(id));
-    }
-
-    void TestLabelRegistry()
-    {
-        CoreContext context;
-        auto& registry = context.Labels();
-        const auto id = Identifier::Create();
-
-        // The registry must keep its own copy: this text dies before the label is read
-        auto text = std::make_unique<std::string>("S.N.C/Test");
-        const auto label = registry.Register(*text, id);
-        CHECK(label.has_value());
-        text.reset();
-
-        CHECK(label->GetName() == "S.N.C/Test");
-        CHECK(registry.Get("S.N.C/Test")->GetUID() == id);
-        CHECK(registry.Get(id)->GetName() == "S.N.C/Test");
-        CHECK(!registry.Register("S.N.C/Test", Identifier::Create()).has_value());
-        CHECK(!registry.Register("S.N.C/Other", id).has_value());
-        CHECK(!registry.Register("", Identifier::Create()).has_value());
-
-        CHECK(registry.Unregister(id));
-        CHECK(!registry.Get("S.N.C/Test").has_value());
-        CHECK(!registry.Contains(id));
-
-        const auto byName = Identifier::Create();
-        CHECK(registry.Register("S.N.C/ByName", byName).has_value());
-        CHECK(registry.Unregister("S.N.C/ByName"));
-        CHECK(!registry.Contains(byName));
     }
 
     void TestConcurrentMap()
@@ -324,59 +288,6 @@ namespace
         CHECK(!pool.IsValid(StellarHandle{1000, 1}));
     }
 
-    void TestContainerRegistry()
-    {
-        CoreContext context;
-        auto& registry = context.Containers();
-        const auto container = Identifier::Create();
-        const auto branch = Identifier::Create();
-        const auto item = Identifier::Create();
-
-        CHECK(registry.Create(container));
-        CHECK(!registry.Create(container));
-        CHECK(registry.Exists(container));
-
-        CHECK(registry.Add(container, item));
-        CHECK(!registry.Add(container, item));
-        CHECK(registry.Contains(container, item));
-        CHECK(registry.Count(container) == 1);
-        CHECK(registry.Items(container) == std::vector{item});
-
-        // A branch is a container too, and a container is not its own branch
-        CHECK(registry.Create(branch));
-        CHECK(registry.AddBranch(container, branch));
-        CHECK(!registry.AddBranch(container, branch));
-        CHECK(!registry.AddBranch(container, container));
-        CHECK(registry.ContainsBranch(container, branch));
-        CHECK(registry.Branches(container) == std::vector{branch});
-        CHECK(registry.RemoveBranch(container, branch));
-
-        // Sealed: the contents are fixed
-        registry.Seal(container);
-        CHECK(registry.IsSealed(container));
-        CHECK(!registry.Add(container, Identifier::Create()));
-        CHECK(!registry.Remove(container, item));
-        CHECK(!registry.Clear(container));
-        CHECK(registry.Count(container) == 1);
-
-        CHECK(registry.Destroy(container));
-        CHECK(registry.Destroy(branch));
-        CHECK(!registry.Destroy(container));
-        CHECK(!registry.Exists(container));
-
-        // An unknown container is a failure, not an empty one
-        bool notFound = false;
-        try
-        {
-            (void)registry.Count(container);
-        }
-        catch (const Failures::NativeException& exception)
-        {
-            notFound = exception.GetResult() == STELLAR_RESULT_NOT_FOUND;
-        }
-        CHECK(notFound);
-    }
-
     void TestExports(const std::string& modulePath)
     {
         Ptr<StellarCoreContext> context;
@@ -407,35 +318,7 @@ namespace
         CHECK(std::memcmp(&uid, &parsed, sizeof(uid)) == 0);
         CHECK(stellar_identifier_parse({"bad", 3}, &parsed, &answer) == STELLAR_RESULT_OK && answer == 0);
 
-        CHECK(stellar_identifier_register(context, &uid, &answer) == STELLAR_RESULT_OK && answer == 1);
-        CHECK(stellar_identifier_register(context, &uid, &answer) == STELLAR_RESULT_OK && answer == 0);
-        CHECK(stellar_identifier_contains(context, &uid, &answer) == STELLAR_RESULT_OK && answer == 1);
-        CHECK(stellar_identifier_unregister(context, &uid, &answer) == STELLAR_RESULT_OK && answer == 1);
-        CHECK(stellar_identifier_unregister(context, &uid, &answer) == STELLAR_RESULT_OK && answer == 0);
-
-        const StellarStringView name = {"S.N.C/Abi", 9};
-        StellarUid found{};
-        CHECK(stellar_label_register(context, name, &uid, &answer) == STELLAR_RESULT_OK && answer == 1);
-        CHECK(stellar_label_find(context, name, &found, &answer) == STELLAR_RESULT_OK && answer == 1);
-        CHECK(std::memcmp(&uid, &found, sizeof(uid)) == 0);
-        CHECK(stellar_label_get_name(context, &uid, &buffer[0], sizeof(buffer), &required) == STELLAR_RESULT_OK);
-        CHECK(std::string(buffer) == "S.N.C/Abi");
-        CHECK(stellar_label_unregister(context, &uid, &answer) == STELLAR_RESULT_OK && answer == 1);
-        CHECK(stellar_label_find(context, name, &found, &answer) == STELLAR_RESULT_OK && answer == 0);
-
-        // Containers through the exports, and a failure: an unknown container
-        StellarUid container{};
         size_t count = 0;
-        CHECK(stellar_identifier_create(&container) == STELLAR_RESULT_OK);
-        CHECK(stellar_container_create(context, &container, &answer) == STELLAR_RESULT_OK && answer == 1);
-        CHECK(stellar_container_add(context, &container, &uid, &answer) == STELLAR_RESULT_OK && answer == 1);
-        CHECK(stellar_container_count(context, &container, &count) == STELLAR_RESULT_OK && count == 1);
-
-        StellarUid items[1]{};
-        CHECK(stellar_container_items(context, &container, &items[0], 1, &required) == STELLAR_RESULT_OK && required == 1);
-        CHECK(std::memcmp(&items[0], &uid, sizeof(uid)) == 0);
-        CHECK(stellar_container_destroy(context, &container, &answer) == STELLAR_RESULT_OK && answer == 1);
-        CHECK(stellar_container_count(context, &container, &count) == STELLAR_RESULT_NOT_FOUND);
 
         // Errors are data: a failure must come back as a code and a message
         StellarHandle module{};
@@ -455,11 +338,9 @@ namespace
         CHECK(stellar_module_count(context, &count) == STELLAR_RESULT_OK && count == 0);
 
         // The default context never sees what another context holds
-        StellarUid probe{};
-        CHECK(stellar_identifier_create(&probe) == STELLAR_RESULT_OK);
-        int32_t inDefault = -1;
-        CHECK(stellar_identifier_register(context, &probe, &inDefault) == STELLAR_RESULT_OK && inDefault == 1);
-        CHECK(stellar_identifier_contains(nullptr, &probe, &inDefault) == STELLAR_RESULT_OK && inDefault == 0);
+        CHECK(stellar_module_load(context, {modulePath.data(), modulePath.size()}, &module) == STELLAR_RESULT_OK);
+        size_t inDefault = 1;
+        CHECK(stellar_module_count(nullptr, &inDefault) == STELLAR_RESULT_OK && inDefault == 0);
         CHECK(stellar_core_context_destroy(context) == STELLAR_RESULT_OK);
     }
 
@@ -473,30 +354,30 @@ namespace
         CoreContext editor;
         CoreContext game;
 
-        // Two engines know nothing of each other: the same identifier, the same label name in both
-        const auto id = Identifier::Create();
-        CHECK(editor.Identifiers().Register(id));
-        CHECK(game.Identifiers().Register(id));
-        CHECK(game.Identifiers().Unregister(id));
-        CHECK(editor.Identifiers().Contains(id));
-        CHECK(!CoreContext::Default().Identifiers().Contains(id));
+        // Two engines know nothing of each other: a module of one is not in the other
+        constexpr char name[] = "Context";
+        const StellarModuleInfo info = {
+            sizeof(StellarModuleInfo),
+            {STELLAR_MODULE_CONTRACT_MAJOR, STELLAR_MODULE_CONTRACT_MINOR},
+            {name, 7},
+            {name, 7},
+            nullptr,
+            nullptr
+        };
 
-        CHECK(editor.Labels().Register("Player", Identifier::Create()).has_value());
-        CHECK(game.Labels().Register("Player", Identifier::Create()).has_value());
-        CHECK(editor.Labels().Get("Player")->GetUID() != game.Labels().Get("Player")->GetUID());
-
-        CHECK(editor.Containers().Create(id));
-        CHECK(!game.Containers().Exists(id));
+        (void)editor.Modules().Add(info);
+        CHECK(editor.Modules().size() == 1);
+        CHECK(game.Modules().size() == 0);
 
         CHECK(&CoreContext::Default() == &CoreContext::Default());
-        CHECK(&editor.Identifiers() != &game.Identifiers());
+        CHECK(&editor.Modules() != &game.Modules());
 
         // A context that goes takes its registries with it
         {
             CoreContext temporary;
-            CHECK(temporary.Identifiers().Register(id));
+            (void)temporary.Modules().Add(info);
         }
-        CHECK(editor.Identifiers().Contains(id));
+        CHECK(editor.Modules().size() == 1);
     }
 
     void TestModuleContract()
@@ -551,23 +432,175 @@ namespace
     }
 }
 
+namespace
+{
+    void TestAllocator()
+    {
+        const auto allocator = Allocator::Create();
+        CHECK(allocator && allocator->References() == 1);
+
+        auto block = allocator->Allocate(100, 64);
+        CHECK(block && reinterpret_cast<uintptr_t>(block.get()) % 64 == 0);
+        CHECK(allocator->References() == 2);
+        CHECK(allocator->GetStats().allocatedBytes == 100 && allocator->GetStats().liveAllocations == 1);
+
+        block = allocator->Reallocate(block, 100, 1000, 64);
+        CHECK(block && allocator->GetStats().allocatedBytes == 1000 && allocator->GetStats().peakBytes == 1000);
+
+        CHECK(!allocator->Allocate(0, 16));
+        CHECK(!allocator->Allocate(16, 3));
+
+        // A block keeps its allocator alive after its maker lets it go
+        allocator->Release();
+        CHECK(allocator->References() == 1);
+        allocator->Free(block, 1000);
+
+        // The same through the table of the ABI
+        Link<const StellarMemoryApi> api = Allocator::Api();
+        CHECK(api.structSize == sizeof(StellarMemoryApi));
+        CHECK(api.contract.major == STELLAR_MEMORY_CONTRACT_MAJOR);
+
+        StellarAllocator* abi = api.create();
+        void* memory = api.allocate(abi, 32, 16);
+        StellarMemoryStats stats{};
+        api.getStats(abi, &stats);
+        CHECK(memory && stats.liveAllocations == 1 && stats.totalAllocations == 1);
+        api.free(abi, memory, 32);
+        api.getStats(abi, &stats);
+        CHECK(stats.liveAllocations == 0 && stats.allocatedBytes == 0);
+        api.release(abi);
+
+        // A context has its allocator, apart from the others
+        CoreContext first;
+        CoreContext second;
+        CHECK(&first.Allocator() != &second.Allocator());
+        CHECK(&first.Allocator() != &CoreContext::Default().Allocator());
+    }
+
+    struct Particle
+    {
+        float x;
+        float life;
+    };
+
+    void TestNativeList()
+    {
+        const auto allocator = Allocator::Create();
+        {
+            NativeList<Particle> list(allocator->ToAbi(), Allocator::Api());
+            auto view = list.View();
+            CHECK(NativeListView<Particle>::IsOf(list.Header()));
+            CHECK(!NativeListView<int32_t>::IsOf(list.Header()));
+
+            for (int i = 0; i < 100; ++i)
+                CHECK(view.Add(Particle{static_cast<float>(i), 1.0f}));
+
+            CHECK(view.Count() == 100 && view.Capacity() >= 100);
+            CHECK(reinterpret_cast<uintptr_t>(list.Header().data) % 16 == 0);
+
+            view.RemoveAtSwapBack(0);
+            CHECK(view.Count() == 99 && view.Items()[0].x == 99.0f);
+
+            for (auto& particle : view.Items())
+                particle.life -= 0.5f;
+            CHECK(view.Items()[10].life == 0.5f);
+
+            view.Clear();
+            CHECK(view.Count() == 0);
+            CHECK(allocator->GetStats().liveAllocations == 1);
+        }
+
+        CHECK(allocator->GetStats().liveAllocations == 0);
+        CHECK(allocator->References() == 1);
+        allocator->Release();
+    }
+
+    void TestNativeListLock()
+    {
+        const auto allocator = Allocator::Create();
+        NativeList<int64_t> list(allocator->ToAbi(), Allocator::Api());
+        std::atomic<int> torn{0};
+        std::atomic<bool> done{false};
+
+        // Pairs go in under the write lock; a reader must never see half of one
+        std::thread reader([&]
+        {
+            while (!done.load())
+            {
+                NativeListReadScope scope(list.Header());
+                if (list.Header().count % 2 != 0)
+                    ++torn;
+            }
+        });
+
+        std::vector<std::thread> writers;
+        for (int w = 0; w < 4; ++w)
+            writers.emplace_back([&]
+            {
+                for (int i = 0; i < 5000; ++i)
+                {
+                    NativeListWriteScope scope(list.Header());
+                    auto view = list.View();
+                    (void)view.Add(i);
+                    (void)view.Add(-i);
+                }
+            });
+
+        for (auto& writer : writers)
+            writer.join();
+        done = true;
+        reader.join();
+
+        CHECK(torn.load() == 0);
+        CHECK(list.Header().count == 40000);
+        CHECK(list.Header().lock == 0);
+        allocator->Release();
+    }
+
+    void TestMemoryExports()
+    {
+        Ptr<const StellarMemoryApi> api;
+        CHECK(stellar_memory_get_api(&api) == STELLAR_RESULT_OK && api.get() == &Allocator::Api());
+        CHECK(stellar_memory_get_api(nullptr) == STELLAR_RESULT_INVALID_ARGUMENT);
+
+        Ptr<StellarCoreContext> context;
+        CHECK(stellar_core_context_create(&context) == STELLAR_RESULT_OK);
+
+        Ptr<StellarAllocator> allocator;
+        CHECK(stellar_core_context_get_allocator(context, &allocator) == STELLAR_RESULT_OK && allocator);
+
+        Ptr<StellarAllocator> fallback;
+        CHECK(stellar_core_context_get_allocator(nullptr, &fallback) == STELLAR_RESULT_OK);
+        CHECK(fallback.get() == CoreContext::Default().Allocator().ToAbi().get());
+
+        // A block outlives the context it came from: the allocator waits for it
+        void* block = api->allocate(allocator.get(), 64, 16);
+        CHECK(stellar_core_context_destroy(context) == STELLAR_RESULT_OK);
+        StellarMemoryStats stats{};
+        api->getStats(allocator.get(), &stats);
+        CHECK(stats.liveAllocations == 1);
+        api->free(allocator.get(), block, 64);
+    }
+}
+
 int main(int, char* argv[])
 {
     const auto directory = std::filesystem::absolute(argv[0]).parent_path();
 
     TestIdentifier();
-    TestIdentifierRegistry();
-    TestLabelRegistry();
     TestConcurrentMap();
     TestPriorityQueue();
     TestConcurrentVector();
     TestDoubleBufferedMap();
     TestDataContainers();
     TestHandlePool();
-    TestContainerRegistry();
     TestExports((directory / "Stellar.Native.TestModule.dll").string());
     TestModuleContract();
     TestContexts();
+    TestAllocator();
+    TestNativeList();
+    TestNativeListLock();
+    TestMemoryExports();
 
     std::printf("%d checks, %d failed\n", checks, failures);
     return failures == 0 ? 0 : 1;

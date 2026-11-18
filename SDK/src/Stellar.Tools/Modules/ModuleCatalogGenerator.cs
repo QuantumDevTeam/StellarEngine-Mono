@@ -39,7 +39,7 @@ public static class ModuleCatalogGenerator
                 new XAttribute("Include", module.Id),
                 new XAttribute("Version", $"[{module.Descriptor.Version}]"),
                 new XAttribute("Level", module.Descriptor.Level.ToString()),
-                new XAttribute("Link", module.Link.ToString()),
+                new XAttribute("LinkMode", module.Link.ToString()),
                 new XAttribute("Source", module.Source.ToString()),
                 new XAttribute("Dependencies", string.Join(";", module.Descriptor.Dependencies)));
 

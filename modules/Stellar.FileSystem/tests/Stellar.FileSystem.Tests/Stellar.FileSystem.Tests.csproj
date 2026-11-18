@@ -6,4 +6,9 @@
     <ItemGroup>
         <StellarDependency Include="Stellar.FileSystem"/>
     </ItemGroup>
+
+    <!-- Files of the asm domain, at their paths -->
+    <ItemGroup>
+        <EmbeddedResource Include="Resources\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)"/>
+    </ItemGroup>
 </Project>

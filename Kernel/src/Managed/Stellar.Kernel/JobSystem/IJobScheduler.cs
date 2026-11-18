@@ -126,5 +126,5 @@ public interface IJobScheduler
     /// This method can be called even after the task has been scheduled.
     /// </remarks>
     [Obsolete("Bad practice, just use high priority for tasks")]
-    IJob SetImportant(IIdentifier taskIdentifier, bool important);
+    IJob SetImportant(Identifier taskIdentifier, bool important);
 }

@@ -4,11 +4,11 @@
 
 ### Level 0 - Kernel
 
-The core of the contracts between Design-time, Build-time and Run-Time
+The core of the contracts between design time, build time and runtime
 
 - Contracts
 - Decoupling dependencies
-- The basis of hyper-quants
+- The contracts of quants
 
 ---
 
@@ -25,14 +25,15 @@ The core of the engine, the implementation of the basic concepts
 ### Level 2 — Core Modules
 
 They communicate only through the Kernel and Stellar.Core, completely independent of each other in Build-time,
-but rely on collaboration in Run-time
+but rely on collaboration at runtime
 
 - Logging
 - EventSystem
-- TaskSystem
+- JobSystem
 - FileSystem
-- TimeSystem
 - AssetPipeline
+
+Time and the loops are not a module: they belong to Stellar.Runtime.
 
 ---
 
@@ -60,14 +61,6 @@ High-level modules that provide ready-made tools for working with the engine
 - Physics
 - VR
 - Network
-
-### Level 4.1 - Stellar.Engine project
-
-The main module is included in the end modules. This project is the "engine"
-
-- Aggregation of modules
-- Optimization of the finished assembly files
-- Configo-dependent subsystems
 
 ### Level 5 - EndPoint
 

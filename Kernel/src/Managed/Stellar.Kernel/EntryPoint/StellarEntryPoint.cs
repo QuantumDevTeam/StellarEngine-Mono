@@ -10,12 +10,11 @@ namespace Stellar.Kernel.EntryPoint;
 /// </summary>
 /// <remarks>
 /// <para>An entry point is the starting and stopping unit of a module or application. Like everything built on the
-/// engine it is a quant, and it exists before any registry does: this is why it carries its own minimal
-/// identifier and label instead of the ones from Stellar.Core.</para>
+/// engine it is a quant, with its own identifier and label.</para>
 /// <para>Derived classes must implement <see cref="Run{TContext}"/> and <see cref="RequestStop{TContext}"/>. The
 /// engine calls these methods with contexts that contain logging and failure handling.</para>
 /// <para>The entry point's <see cref="UID"/> is generated randomly and must not be used for persistent identification.
-/// Use the <see cref="ILabel.Name"/> of <see cref="Label"/> for that.</para>
+/// Use the name of its <see cref="Label"/> for that.</para>
 /// </remarks>
 public abstract class StellarEntryPoint
     : IQuant, ILabeled, IDisposable
@@ -46,12 +45,12 @@ public abstract class StellarEntryPoint
     /// <summary>
     /// Gets the randomly generated identifier of this entry point. It is not stable across runs.
     /// </summary>
-    public IIdentifier UID => _meta.UID;
+    public Identifier UID => _meta.UID;
 
     /// <summary>
     /// Gets the human-readable label of this entry point.
     /// </summary>
-    public ILabel Label => _meta;
+    public Label Label => _meta.Label;
 
     /// <inheritdoc/>
     public IMetaQuant Meta => _meta;
@@ -88,45 +87,11 @@ public abstract class StellarEntryPoint
     /// </summary>
     public abstract void Dispose();
 
-    private sealed class EntryPointIdentifier
-        : IIdentifier
-    {
-        public Guid UID { get; } = Guid.NewGuid();
-
-        public void Register(IQuantumObject registry)
-        {
-            throw new NotSupportedException("Entry point identifiers are not registrable");
-        }
-
-        public void Unregister(IQuantumObject registry)
-        {
-            throw new NotSupportedException("Entry point identifiers are not registrable");
-        }
-
-        public void Dispose()
-        {
-        }
-    }
-
     private sealed class EntryPointMeta(string name)
-        : ILabel
+        : IMetaQuant
     {
-        public IIdentifier UID { get; } = new EntryPointIdentifier();
+        public Label Label { get; } = Label.New(name);
 
-        public string Name { get; } = name;
-
-        public void Register(IQuantumObject registry)
-        {
-            throw new NotSupportedException("Entry point labels are not registrable");
-        }
-
-        public void Unregister(IQuantumObject registry)
-        {
-            throw new NotSupportedException("Entry point labels are not registrable");
-        }
-
-        public void Dispose()
-        {
-        }
+        public Identifier UID => Label.UID;
     }
 }

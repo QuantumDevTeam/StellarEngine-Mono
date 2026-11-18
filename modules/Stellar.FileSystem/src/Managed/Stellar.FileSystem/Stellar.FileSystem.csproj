@@ -4,4 +4,8 @@
         the dependencies from Stellar.FileSystem.stellar.module, and references Stellar.Kernel and Stellar.Core.
         Anything set here wins over it. Every property: Docs/Reference/Sdk.Properties.md of the installation.
     -->
+    <PropertyGroup>
+        <!-- The asm domain hands out embedded resources where they lie in memory, without a copy -->
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
 </Project>

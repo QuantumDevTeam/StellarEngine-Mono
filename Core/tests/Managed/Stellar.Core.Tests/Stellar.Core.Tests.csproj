@@ -11,6 +11,7 @@
         <StellarSdkUsage>Tests</StellarSdkUsage>
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <!-- The parity test reads both wrappers as metadata -->

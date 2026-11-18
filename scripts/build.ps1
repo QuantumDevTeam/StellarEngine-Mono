@@ -220,6 +220,25 @@ if ($Pack) {
             dotnet pack $csproj -c $Configuration "-p:StellarNativeWrapper=$Wrapper" -v quiet --nologo
         }
     }
+
+    # NuGet unpacks a version once: a copy unpacked before this pack would hide it from every game
+    $cache = if ($env:NUGET_PACKAGES) { $env:NUGET_PACKAGES } else { Join-Path $HOME '.nuget/packages' }
+    foreach ($package in Get-ChildItem (Join-Path $root 'packages') -Filter '*.nupkg' -ErrorAction SilentlyContinue) {
+        if ($package.Name -notmatch '^(?<id>.+?)\.(?<version>\d+\.\d+\.\d+(?:[-.][0-9A-Za-z.-]+)?)\.nupkg$') { continue }
+        $cached = Join-Path $cache "$($Matches.id.ToLowerInvariant())/$($Matches.version.ToLowerInvariant())"
+        $marker = Join-Path $cached '.nupkg.metadata'
+        if (-not (Test-Path $cached)) { continue }
+        if ((Test-Path $marker) -and (Get-Item $marker).LastWriteTimeUtc -ge $package.LastWriteTimeUtc) { continue }
+        try {
+            # Moved away first: a folder with a held file does not move, so it is left whole, never half deleted
+            $away = "$cached.stale-$([guid]::NewGuid().ToString('N'))"
+            [System.IO.Directory]::Move($cached, $away)
+            Write-Host "Took the old $($package.BaseName) out of the NuGet cache"
+            try { [System.IO.Directory]::Delete($away, $true) } catch { }
+        } catch {
+            Write-Host "The NuGet cache still has the old $($package.BaseName), held by a running process (an IDE?): close it and pack again" -ForegroundColor Yellow
+        }
+    }
 }
 
 if ($Install) {

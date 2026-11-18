@@ -14,10 +14,10 @@ public interface IIdentifiableQuantumObject
     /// <summary>
     /// Gets the unique identifier of this object.
     /// </summary>
-    /// <value>An <see cref="IIdentifier"/> instance that uniquely represents the object.</value>
+    /// <value>An <see cref="Identifier"/> instance that uniquely represents the object.</value>
     /// <remarks>
     /// The <see cref="UID"/> must be stable for the lifetime of the object.
     /// It is used for dependency resolution, lookups, and serialization.
     /// </remarks>
-    IIdentifier UID { get; }
+    Identifier UID { get; }
 }

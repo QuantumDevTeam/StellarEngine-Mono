@@ -230,7 +230,7 @@ public class ModuleSynchronizerTests
         set.LoadOrder.Select(module => module.Id).Should().Equal("Stellar.A", "Stellar.B");
         catalog.Should()
             .Contain(
-                """<StellarModuleInfo Include="Stellar.A" Version="[1.2.3]" Level="CoreModule" Link="Default" Source="Discovered" """
+                """<StellarModuleInfo Include="Stellar.A" Version="[1.2.3]" Level="CoreModule" LinkMode="Default" Source="Discovered" """
                     .TrimEnd());
         catalog.Should().Contain("""Condition="'$(StellarModuleId)' == 'Stellar.B'" """.TrimEnd());
         catalog.Should()

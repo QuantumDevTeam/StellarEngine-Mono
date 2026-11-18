@@ -85,12 +85,11 @@ artifacts/
 | `artifacts/bin/Stellar.Core-Cli/Debug/` | a project of the core built once per wrapper of the native core: `-Cli`, `-Managed` |
 | `artifacts/bin/Stellar.Kernel/Debug/net9.0/` | a project with several target frameworks: one folder each |
 | `artifacts/bin/Stellar.Logging/Debug/` | a module |
-| `artifacts/bin/Demo/Release/` | a game, ready to ship |
 
 `Shared/Build/Stellar.Artifacts.props` is the single definition of this tree: the core imports it through
-`Directory.Build.props`, `Stellar.Sdk` imports it for modules and games before `Microsoft.NET.Sdk`, and
-`Stellar.Native.props` for native projects. `StellarUseArtifactsOutput=false` keeps the plain `bin/` and `obj/` next
-to a project. Packages are not build output: they go to the local feed, `packages/`.
+`Directory.Build.props`, `Stellar.Sdk` imports it for modules and tools before `Microsoft.NET.Sdk`, and
+`Stellar.Native.props` for native projects. Games and libraries keep the plain `bin/` and `obj/` next to themselves, as
+any .NET project, so an IDE shows their own files only; `StellarUseArtifactsOutput=false` does the same for any project. Packages are not build output: they go to the local feed, `packages/`.
 
 Cleaning an installation is deleting `artifacts/`.
 

@@ -13,12 +13,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <StellarModuleInfo Include="Stellar.Kernel" Version="[$(StellarKernelVersion)]" Level="Kernel" Link="Default" Source="Core"
+        <StellarModuleInfo Include="Stellar.Kernel" Version="[$(StellarKernelVersion)]" Level="Kernel" LinkMode="Default" Source="Core"
                            ProjectPath="$(StellarRoot)Kernel/src/Managed/Stellar.Kernel/Stellar.Kernel.csproj"/>
-        <StellarModuleInfo Include="Stellar.Core" Version="[$(StellarCoreVersion)]" Level="Core" Link="Default" Source="Core"
+        <StellarModuleInfo Include="Stellar.Core" Version="[$(StellarCoreVersion)]" Level="Core" LinkMode="Default" Source="Core"
                            Dependencies="Stellar.Kernel"
                            ProjectPath="$(StellarRoot)Core/src/Managed/Stellar.Core/Stellar.Core.csproj"/>
-        <StellarModuleInfo Include="Stellar.Runtime" Version="[$(StellarRuntimeVersion)]" Level="Runtime" Link="Default" Source="Core"
+        <StellarModuleInfo Include="Stellar.Runtime" Version="[$(StellarRuntimeVersion)]" Level="Runtime" LinkMode="Default" Source="Core"
                            Dependencies="Stellar.Kernel"
                            ProjectPath="$(StellarRoot)Runtime/src/Managed/Stellar.Runtime/Stellar.Runtime.csproj"/>
     </ItemGroup>

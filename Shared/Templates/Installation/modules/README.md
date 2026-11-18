@@ -12,7 +12,7 @@ stellar modules build
 A module that lives elsewhere, e.g. a repository being worked on:
 
 ```bash
-stellar modules add F:/project/CS/Stellar.Sample
+stellar modules add ../Stellar.Sample
 ```
 
 See `Docs/Engine/Modules.md` at the root of the installation.

@@ -6,6 +6,7 @@ using Stellar.Core.Services;
 using Stellar.Kernel;
 using Stellar.Kernel.Data.Context;
 using Stellar.Kernel.Quantization;
+using Stellar.Kernel.Services;
 
 namespace Stellar.Core.Tests;
 
@@ -22,7 +23,7 @@ public class QuantTests
     private sealed class Service()
         : RegistrableQuant<Service, MetaQuant>(new MetaQuant());
 
-    private sealed class SharedMeta(IIdentifier id)
+    private sealed class SharedMeta(Identifier id)
         : RegistrableMetaQuant<SharedMeta>(id);
 
     [Fact]
@@ -31,7 +32,7 @@ public class QuantTests
         var meta = new PlayerMeta();
         var player = new Player(meta);
 
-        player.UID.Should().BeSameAs(meta.UID);
+        player.UID.Should().Be(meta.UID);
         player.Meta.Should().BeSameAs(meta);
         player.MetaQuant.Should().BeSameAs(meta);
     }
@@ -92,23 +93,23 @@ public class QuantTests
     {
         var service = new Service();
 
-        CoreEngine.Current.Registry.Quants<Service>().Get(service.UID).Should().BeSameAs(service);
+        CoreEngine.Current.Registry.Of<Service>().Get(service.UID).Should().BeSameAs(service);
 
         service.Dispose();
 
-        CoreEngine.Current.Registry.Quants<Service>().Exists(service.UID).Should().BeFalse();
+        CoreEngine.Current.Registry.Of<Service>().Exists(service.UID).Should().BeFalse();
     }
 
     [Fact]
     public void RegistrableMetaQuant_ComesAndGoesFromItsRegistry()
     {
-        var meta = new SharedMeta(Identifier.Create());
+        var meta = new SharedMeta(Identifier.New());
 
-        CoreEngine.Current.Registry.MetaQuants<SharedMeta>().Get(meta.UID).Should().BeSameAs(meta);
+        CoreEngine.Current.Registry.Of<SharedMeta>().Get(meta.UID).Should().BeSameAs(meta);
 
         meta.Dispose();
 
-        CoreEngine.Current.Registry.MetaQuants<SharedMeta>().Exists(meta.UID).Should().BeFalse();
+        CoreEngine.Current.Registry.Of<SharedMeta>().Exists(meta.UID).Should().BeFalse();
     }
 
     [Fact]
@@ -152,7 +153,7 @@ public class ContextTests
     }
 }
 
-public class ServiceRegistryTests
+public class ServiceCatalogTests
 {
     private interface IService;
 
@@ -161,7 +162,7 @@ public class ServiceRegistryTests
     [Fact]
     public void Services_ArePublishedByContract()
     {
-        var registry = new ServiceRegistry();
+        IServiceCatalog registry = new ServiceCatalog();
         var service = new Service();
 
         registry.Find<IService>().Should().BeNull();
@@ -175,7 +176,7 @@ public class ServiceRegistryTests
     [Fact]
     public void Get_FailsForUnpublishedService()
     {
-        var action = () => new ServiceRegistry().Get<IService>();
+        var action = () => ((IServiceCatalog)new ServiceCatalog()).Get<IService>();
 
         action.Should().Throw<InvalidOperationException>().WithMessage("*IService*");
     }
@@ -183,7 +184,7 @@ public class ServiceRegistryTests
     [Fact]
     public void Remove_UnpublishesService()
     {
-        var registry = new ServiceRegistry();
+        IServiceCatalog registry = new ServiceCatalog();
         registry.Set<IService>(new Service());
 
         registry.Remove<IService>().Should().BeTrue();

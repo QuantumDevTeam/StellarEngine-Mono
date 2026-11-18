@@ -1,4 +1,6 @@
+using Stellar.Kernel.Failures;
 using Stellar.Kernel.Lifecycle;
+using Stellar.Kernel.Profiling;
 
 namespace Stellar.Runtime.Lifecycle;
 
@@ -33,13 +35,16 @@ public sealed class RuntimePipeline(IReadOnlyList<IRuntimeStage> stages)
             context.Log.Step($"Start: {stage.Name}");
             entered.Push(stage);
 
-            var result = await context.Catchers[stage.CatchLevel].RunAsync(
-                () => stage.StartAsync(context), $"the stage {stage.Name}");
+            // A stage is a span on the timeline of a profiler: the stage of the main loop spans the whole run
+            Failure? failure;
+            using (new ProfilerMarker($"Runtime.{stage.Name}", ProfilerCategory.Modules).Auto())
+                failure = await context.Catchers[stage.CatchLevel].GuardAsync(
+                    () => stage.StartAsync(context), $"the stage {stage.Name}");
 
-            if (!result.Failed) continue;
+            if (failure is null) continue;
 
             failed = stage;
-            context.Control.RequestStop(result.Exception!);
+            context.Control.RequestStop(failure);
             break;
         }
 
@@ -48,7 +53,7 @@ public sealed class RuntimePipeline(IReadOnlyList<IRuntimeStage> stages)
         while (entered.TryPop(out var stage))
         {
             context.Log.Step($"Stop: {stage.Name}");
-            await context.Catchers.Engine.RunAsync(() => stage.StopAsync(context), $"the stop of {stage.Name}");
+            await context.Catchers.Engine.GuardAsync(() => stage.StopAsync(context), $"the stop of {stage.Name}");
         }
 
         context.Control.SetState(EngineState.Stopped);

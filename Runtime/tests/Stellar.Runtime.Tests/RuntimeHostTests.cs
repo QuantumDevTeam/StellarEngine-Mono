@@ -70,7 +70,7 @@ public sealed class RuntimeHostTests : IDisposable
     {
         Run("throw-update").Should().Be(RuntimeExitCodes.Success, _output.ToString());
 
-        _events.Should().Contain("report:Update:a bad frame");
+        _events.Should().Contain("report:Error:a bad frame");
         _events.Should().Contain("app:update 2");
     }
 
@@ -88,7 +88,7 @@ public sealed class RuntimeHostTests : IDisposable
     {
         Run("throw-run").Should().Be(RuntimeExitCodes.Failure);
 
-        _events.Should().Contain(e => e.StartsWith("report:Engine:the game cannot start"));
+        _events.Should().Contain(e => e.StartsWith("report:CriticalError:the game cannot start"));
         _events.Should().EndWith("host:dispose");
     }
 

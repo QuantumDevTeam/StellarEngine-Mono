@@ -28,6 +28,17 @@ app.Configure(config =>
     config.AddCommand<UninstallCommand>("uninstall")
         .WithDescription("Remove an installation: back to a plain checkout of the core, unknown to the machine");
 
+    config.AddCommand<RunCommand>("run")
+        .WithDescription("Build and run a game or a tool of the solution; arguments after -- go to it");
+
+    config.AddBranch("solution", solution =>
+    {
+        solution.SetDescription("The solution of a game");
+
+        solution.AddCommand<SyncSolutionCommand>("sync")
+            .WithDescription("Write the .sln again: its projects, and the engine when it works on its sources");
+    }).WithAlias("sln");
+
     config.AddBranch("modules", modules =>
     {
         modules.SetDescription("Engine modules");

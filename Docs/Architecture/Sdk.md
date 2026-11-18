@@ -11,13 +11,17 @@ engine steps to the build. It does not define engine behavior.
 <Project Sdk="Stellar.Sdk">
     <PropertyGroup>
         <StellarSdkUsage>ExecutableModule</StellarSdkUsage>
+        <StellarDependencies>Stellar.FileSystem;Stellar.Logging</StellarDependencies>
     </PropertyGroup>
-
-    <ItemGroup>
-        <StellarDependency Include="Stellar.Logging"/>
-    </ItemGroup>
 </Project>
 ```
+
+The modules a project uses are a property, `StellarDependencies`: the SDK makes the dependencies from it in its own
+targets, and an IDE shows nothing of it as a file. A module may also be declared as a package,
+`<PackageReference Include="Stellar.FileSystem"/>`, by hand or from the NuGet window of the IDE (the feed `StellarLocal`
+of `NuGet.config`): a package the catalog knows is a module, of the version of the installation, linked as the package or
+as the sources; its own `Version`, if any, does not count. `StellarDependency` items still work, module descriptors make
+them, but Rider shows an item written in a project file as a file of the project, a missing one.
 
 The SDK version is pinned once, in `global.json`, not in every project:
 
@@ -84,14 +88,21 @@ Every other project of the core gets `$(StellarRoot)` from `Directory.Build.prop
 by side, and ignores `config/` of the installation: the core builds the same everywhere. It needs no task assembly:
 the tasks only run for projects with a `.stellar.project`.
 
-## Sources in Debug, packages in Release
+## Sources or packages
 
-`StellarPrecompiled` selects how a module is linked:
+`StellarPrecompiled` selects how a module is linked: `ProjectReference` to the sources, or `PackageReference` to the
+local feed.
 
 | | Debug | Other configurations |
 |---|---|---|
-| Default | `false` | `true` |
-| Reference | `ProjectReference` to the sources | `PackageReference` to the local feed |
+| The engine side: modules and tools of the installation | sources | packages |
+| A game or a library | packages | packages |
+| A game whose solution says `"Engine": "Sources"` | sources | packages |
+
+A game sees the engine as a dependency, as any package, and its solution has its own projects only. A solution that
+works on the engine itself switches to sources in its `.stellar.solution`; `stellar solution sync` then puts the engine
+projects into the solution folders `Engine` and `Modules`, because an IDE loads a referenced project only from the
+solution.
 
 Set the property to override the default, or pin one module either way for the whole installation with `Link` in the
 [manifest](../Formats/EngineManifest.md). If sources are requested but the core is not there, as on the machine of a
@@ -108,9 +119,17 @@ Everything happens at MSBuild evaluation time, with no task. Restore and the IDE
 2. That file is generated from the module descriptors and the manifest by `stellar modules sync`, because MSBuild
    cannot read JSON at evaluation time. It also holds a property group per module, active only in the project of
    that module: this is how a module project learns its level, version and dependencies.
-3. `StellarDependency` items are joined with the catalog and become references, by the `Link` of the module or by
-   `StellarPrecompiled`.
-4. A name the catalog does not know is a build error.
+3. `StellarDependencies` and a `PackageReference` the catalog knows become `StellarDependency` items, which are joined
+   with the catalog and become references, by the `Link` of the module or by `StellarPrecompiled`.
+4. A `StellarDependency` the catalog does not know is a build error.
+5. A module of the installation taken as a package without a package in `packages/` is a build error that says to run
+   `stellar modules build --pack`, instead of a failed restore.
+6. A module taken as sources and missing from the solution the IDE builds is a warning that says to run
+   `stellar solution sync`: an IDE loads a referenced project only from the solution.
+
+The engine packs its packages again under the same versions while it is developed. NuGet unpacks a version once, so
+`build.ps1 -Pack`, `stellar install` and `stellar modules build --pack` take the copies unpacked before out of the
+NuGet cache: the next restore of a game takes the new ones.
 
 ## The build pipeline
 

@@ -43,6 +43,7 @@
         <ClInclude Include="Data\**\*.h"/>
         <ClInclude Include="Data\**\*.inl"/>
         <ClInclude Include="Failures\**\*.h"/>
+        <ClInclude Include="Memory\**\*.h"/>
         <ClInclude Include="Mixins\**\*.h"/>
         <ClInclude Include="Modules\**\*.h"/>
         <ClInclude Include="include\Core\*.h"/>
@@ -56,15 +57,13 @@
         <ClCompile Include="pch.cpp">
             <PrecompiledHeader>Create</PrecompiledHeader>
         </ClCompile>
-        <ClCompile Include="Data\Registry\IdentifierRegistry.cpp"/>
-        <ClCompile Include="Data\Registry\LabelRegistry.cpp"/>
-        <ClCompile Include="Data\Registry\ContainerRegistry.cpp"/>
         <ClCompile Include="HeadersCheck.cpp">
             <PrecompiledHeader>NotUsing</PrecompiledHeader>
             <LanguageStandard>stdcpp20</LanguageStandard>
         </ClCompile>
         <ClCompile Include="Failures\LastError.cpp"/>
         <ClCompile Include="CoreContext.cpp"/>
+        <ClCompile Include="Memory\Allocator.cpp"/>
         <ClCompile Include="Identifier.cpp"/>
         <ClCompile Include="Label.cpp"/>
         <ClCompile Include="Modules\ModuleRegistry.cpp"/>

@@ -1,151 +1,120 @@
-using Stellar.Core.Native;
-using Stellar.Core.Data.Registry;
+using System.Runtime.CompilerServices;
 using Stellar.Kernel;
-using Stellar.Kernel.Quantization;
 
 namespace Stellar.Core.Tests;
 
 public class IdentifierTests
 {
-    private sealed class ForeignIdentifier(Guid uid) : IIdentifier
+    [Fact]
+    public void NewIdentifiers_AreDifferent_AndNotEmpty()
     {
-        public Guid UID { get; } = uid;
+        var first = Identifier.New();
+        var second = Identifier.New();
 
-        public void Register(IQuantumObject registry)
+        first.Should().NotBe(second);
+        first.IsEmpty.Should().BeFalse();
+        default(Identifier).Should().Be(Identifier.Empty);
+        Identifier.Empty.IsEmpty.Should().BeTrue();
+    }
+
+    [Fact]
+    public void NewIdentifiers_AreVersion4Uuids_DifferentOnEveryThread()
+    {
+        var made = new System.Collections.Concurrent.ConcurrentBag<Identifier>();
+
+        Parallel.For(0, 8, _ =>
         {
-        }
+            for (var i = 0; i < 5000; i++) made.Add(Identifier.New());
+        });
 
-        public void Unregister(IQuantumObject registry)
+        made.Distinct().Should().HaveCount(40_000);
+        made.Should().AllSatisfy(id =>
         {
-        }
-
-        public void Dispose()
-        {
-        }
+            var text = id.ToString();
+            text[14].Should().Be('4');
+            "89ab".Should().Contain(text[19].ToString());
+        });
     }
 
     [Fact]
-    public void Identifiers_WithSameUid_AreEqual()
+    public void TheTextForm_GoesBackAndForth()
     {
-        var uid = Guid.NewGuid();
+        var id = Identifier.New();
+        var text = id.ToString();
 
-        new Identifier(uid).Should().Be(new Identifier(uid));
-        new Identifier(uid).GetHashCode().Should().Be(new Identifier(uid).GetHashCode());
-        new Identifier(uid).Equals(new ForeignIdentifier(uid)).Should().BeTrue();
+        text.Should().HaveLength(36).And.Be(text.ToLowerInvariant());
+        Identifier.Parse(text).Should().Be(id);
+        Identifier.Parse(text.ToUpperInvariant()).Should().Be(id);
+        id.GetHashCode().Should().Be(Identifier.Parse(text).GetHashCode());
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("not an identifier")]
+    [InlineData("{00112233-4455-6677-8899-aabbccddeeff}")]
+    [InlineData("00112233445566778899aabbccddeeff")]
+    public void TryParse_RefusesOtherForms(string? text)
+    {
+        Identifier.TryParse(text, out var id).Should().BeFalse();
+        id.Should().Be(Identifier.Empty);
     }
 
     [Fact]
-    public void Identifiers_WithDifferentUid_AreNotEqual()
+    public void TheBytes_GoBackAndForth()
     {
-        Identifier.Create().Should().NotBe(Identifier.Create());
+        var id = Identifier.New();
+
+        Identifier.FromBytes(id.ToBytes()).Should().Be(id);
+
+        Span<byte> bytes = stackalloc byte[Identifier.Size];
+        id.TryWriteBytes(bytes).Should().BeTrue();
+        Identifier.FromBytes(bytes).Should().Be(id);
+        FluentActions.Invoking(() => Identifier.FromBytes(new byte[3])).Should().Throw<ArgumentException>();
     }
 
     [Fact]
-    public void CreateAndRegister_PutsIdentifierIntoRegistry()
+    public void AnIdentifier_IsSixteenBlittableBytes()
     {
-        // Regression: the registration used to be a silent no-op
-        var id = Identifier.CreateAndRegister();
-
-        CoreContext.Current.Identifiers.Exists(id).Should().BeTrue();
-        Identifier.Get(id.UID).Should().Be(id);
-        Identifier.Get(id.UID.ToString()).Should().Be(id);
-        Identifier.Get(id.UID.ToByteArray()).Should().Be(id);
-    }
-
-    [Fact]
-    public void Dispose_RemovesIdentifierFromRegistry()
-    {
-        var id = Identifier.CreateAndRegister();
-
-        id.Dispose();
-
-        CoreContext.Current.Identifiers.Exists(id).Should().BeFalse();
-    }
-
-    [Fact]
-    public void Register_InWrongRegistry_Throws()
-    {
-        var action = () => Identifier.Create().Register(CoreContext.Current.Labels);
-
-        action.Should().Throw<ArgumentException>();
-    }
-
-    [Fact]
-    public void Registry_FindsIdentifier_ByForeignImplementationWithSameUid()
-    {
-        var id = Identifier.CreateAndRegister();
-
-        CoreContext.Current.Identifiers.Get(new ForeignIdentifier(id.UID)).Should().Be(id);
+        // It crosses into native code as it is, the StellarUid of the native core
+        Unsafe.SizeOf<Identifier>().Should().Be(16);
+        RuntimeHelpers.IsReferenceOrContainsReferences<Identifier>().Should().BeFalse();
     }
 }
 
 public class LabelTests
 {
-    private static string UniqueName()
+    [Fact]
+    public void ALabel_IsItsIdentifierAndItsName()
     {
-        return $"Test/{Guid.NewGuid()}";
+        var id = Identifier.New();
+
+        new Label(id, "Player").Should().Be(new Label(id, "Player"));
+        new Label(id, "Player").Should().NotBe(new Label(id, "Enemy"));
+        new Label(Identifier.New(), "Player").Should().NotBe(new Label(id, "Player"));
+        new Label(id, "Player").GetHashCode().Should().Be(new Label(id, "Player").GetHashCode());
     }
 
     [Fact]
-    public void Create_RegistersLabel()
+    public void New_GivesANewIdentifier()
     {
-        var name = UniqueName();
-
-        var label = Label.Create(name);
-
-        label.Should().NotBeNull();
-        Label.Get(name).Should().Be(label);
-        Label.Get(label!.UID).Should().Be(label);
-    }
-
-    [Fact]
-    public void Create_WithTakenName_ReturnsNull()
-    {
-        var name = UniqueName();
-        Label.Create(name);
-
-        Label.Create(name).Should().BeNull();
+        Label.New("Player").UID.Should().NotBe(Label.New("Player").UID);
     }
 
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
-    public void Create_WithBlankName_ReturnsNull(string name)
+    public void ABlankName_IsRefused(string name)
     {
-        Label.Create(name).Should().BeNull();
+        FluentActions.Invoking(() => Label.New(name)).Should().Throw<ArgumentException>();
     }
 
     [Fact]
-    public void Create_WithoutRegistration_LeavesRegistryAlone()
+    public void TheEmptyLabel_HasNothing()
     {
-        var name = UniqueName();
-
-        Label.Create(name, false).Should().NotBeNull();
-
-        Label.Get(name).Should().BeNull();
-    }
-
-    [Fact]
-    public void ImplicitConversion_ReusesLabel()
-    {
-        var name = UniqueName();
-
-        Label? first = name;
-        Label? second = name;
-
-        second.Should().Be(first);
-    }
-
-    [Fact]
-    public void Dispose_FreesTheName()
-    {
-        // Regression: the registration used to be a silent no-op, so the name was never released
-        var name = UniqueName();
-        var label = Label.Create(name)!;
-
-        label.Dispose();
-
-        Label.Get(name).Should().BeNull();
-        Label.Create(name).Should().NotBeNull();
+        default(Label).IsEmpty.Should().BeTrue();
+        default(Label).Name.Should().BeEmpty();
+        default(Label).UID.IsEmpty.Should().BeTrue();
+        Label.New("x").IsEmpty.Should().BeFalse();
     }
 }

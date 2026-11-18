@@ -1,50 +1,23 @@
 using System;
+using Stellar.Kernel.Data.Registry;
 
 namespace Stellar.Kernel.Quantization;
 
 /// <summary>
-/// Marks a <see cref="IQuantumObject"/> that can be added to or removed from a registry.
+/// A quantum object that registries can hold.
 /// </summary>
 /// <remarks>
-/// <para>Registries (implementing <see cref="IQuantumObject"/>) act as containers for objects that need
-/// global or scoped access. Examples: entity registry, task registry, resource registry.</para>
-/// <para>Implementing this interface allows the object to notify the registry of its creation or destruction,
-/// enabling automatic cleanup and lookup.</para>
+/// <para>The object does not register itself: a registry takes it (<see cref="IRegistry{T}.Register"/>) and lets it
+/// go, and keeps <see cref="Registrations"/> up to date. Disposing the object removes it from every registry it is
+/// in.</para>
+/// <para>The base classes of Stellar.Core may ask the registries of the current engine to take a new object (implicit
+/// registration); it is still the registries that do it, and it can be turned off for a class.</para>
 /// </remarks>
-/// <example>
-/// Registration pattern:
-/// <code>
-/// public class MyRegistry : IQuantumObject { ... }
-/// 
-/// IRegistrableQuantumObject obj = ...;
-/// IQuantumObject registry = new MyRegistry();
-/// obj.Register(registry);
-/// // ... use obj
-/// obj.Unregister(registry);
-/// </code>
-/// </example>
 public interface IRegistrableQuantumObject
-    : IQuantumObject, IDisposable
+    : IIdentifiableQuantumObject, IDisposable
 {
     /// <summary>
-    /// Registers this object with the specified registry.
+    /// Gets the registries this object is in.
     /// </summary>
-    /// <param name="registry">The registry container that will store a reference to this object.</param>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="registry"/> is <c>null</c>.</exception>
-    /// <remarks>
-    /// The exact registration semantics (e.g., key type, duplicate handling) are defined by the registry implementation.
-    /// Typically, the registry uses the object's <see cref="IIdentifiableQuantumObject.UID"/> as the key.
-    /// </remarks>
-    void Register(IQuantumObject registry);
-
-    /// <summary>
-    /// Unregisters this object from the specified registry.
-    /// </summary>
-    /// <param name="registry">The registry from which to remove this object.</param>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="registry"/> is <c>null</c>.</exception>
-    /// <remarks>
-    /// After unregistration, the registry should no longer return this object in lookups.
-    /// Calling <see cref="Unregister"/> on an object that was not previously registered should have no effect.
-    /// </remarks>
-    void Unregister(IQuantumObject registry);
+    IRegistrations Registrations { get; }
 }

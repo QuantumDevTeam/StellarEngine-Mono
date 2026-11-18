@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "stellar.solution.schema.json",
+  "title": "Stellar solution configuration (.stellar.solution)",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "Engine": {
+      "enum": ["Packages", "Sources"],
+      "description": "How the projects take the engine: its packages (the default), or its sources in Debug, listed in the solution after 'stellar solution sync'"
+    },
+    "Run": {
+      "type": "object",
+      "description": "How 'stellar run' runs the solution",
+      "properties": {
+        "Default": {
+          "type": "string",
+          "description": "What runs without a name: a profile, or an executable project"
+        },
+        "Profiles": {
+          "type": "object",
+          "description": "Ways to run, by name",
+          "additionalProperties": { "$ref": "#/$defs/profile" }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "profile": {
+      "type": "object",
+      "properties": {
+        "Project": {
+          "type": "string",
+          "description": "The project to run: a path to its .csproj relative to the solution, or its name"
+        },
+        "Projects": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Several projects to run at once, each in a process of its own: built first, one after another"
+        },
+        "Configuration": { "type": "string", "description": "Debug when omitted" },
+        "Arguments": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Arguments of the application; those after -- on the command line follow them"
+        },
+        "Environment": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Environment variables of the processes"
+        },
+        "Properties": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "MSBuild properties of the build, such as StellarNativeWrapper"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

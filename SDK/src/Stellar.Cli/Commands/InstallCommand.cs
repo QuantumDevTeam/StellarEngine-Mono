@@ -23,9 +23,12 @@ public sealed class InstallCommand
 {
     public override int Execute(CommandContext context, InstallSettings settings)
     {
-        EngineInstaller.Install(new StellarInstallation(InstallationPaths.Root(settings.Path)),
-            ConsoleToolLogger.Instance,
+        var installation = new StellarInstallation(InstallationPaths.Root(settings.Path));
+        EngineInstaller.Install(installation, ConsoleToolLogger.Instance,
             settings.NoUserRegistration ? null : InstallationRegistry.ForCurrentUser());
+
+        // Packed again under the same versions: the games must not keep the copies NuGet unpacked before
+        PackageCache.RefreshStale(installation.Packages, null, ConsoleToolLogger.Instance);
         return 0;
     }
 }
@@ -50,10 +53,6 @@ internal static class InstallationPaths
     /// </summary>
     public static string PackageCache()
     {
-        var fromVariable = Environment.GetEnvironmentVariable("NUGET_PACKAGES");
-        return !string.IsNullOrWhiteSpace(fromVariable)
-            ? System.IO.Path.GetFullPath(fromVariable)
-            : System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget",
-                "packages");
+        return Stellar.Tools.Installation.PackageCache.Location();
     }
 }

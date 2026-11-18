@@ -41,7 +41,7 @@ public sealed class RuntimeContext
         Settings = RuntimeSettings.Create(null, launch.Arguments);
         Time = new TimeSystem();
         Catchers = new RuntimeCatchers(log,
-            () => Services?.Find<IFailureReporter>(),
+            () => Services?.Find<IFailureSystem>(),
             () => Services?.Find<ILogger>() is not null);
         Loops = new MainLoops(new MainLoopOptions { Name = "Main" }, Time, dispatcher, Catchers.MainLoop, control);
         Engine = new EngineInstance(launch.ApplicationName, control, Time, Loops, dispatcher, () => Services);
@@ -115,7 +115,7 @@ public sealed class RuntimeContext
     /// <summary>
     /// Gets or sets the services of the engine, once the module that owns them is started.
     /// </summary>
-    public IServiceRegistry? Services { get; set; }
+    public IServiceCatalog? Services { get; set; }
 
     /// <summary>
     /// Gets or sets the clocks of the engine.

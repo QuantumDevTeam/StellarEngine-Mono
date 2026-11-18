@@ -1,4 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
 using Stellar.Kernel.Configuration;
+using Stellar.Kernel.Data.Catalog;
 using Stellar.Kernel.EntryPoint;
 using Stellar.Kernel.Failures;
 using Stellar.Kernel.Lifecycle;
@@ -14,12 +16,12 @@ namespace Stellar.Runtime.Tests.Host;
 public sealed class HostEntryPoint(RuntimeConfiguration configuration)
     : StellarEntryPoint("Tests/Host", configuration), IServiceHost
 {
-    public IServiceRegistry Services { get; } = new Registry();
+    public IServiceCatalog Services { get; } = new ServiceCatalog();
 
     public override int Run<TContext>(ref readonly TContext context)
     {
         Events.Add($"host:run control={Services.Find<IEngineControl>() is not null}");
-        Services.Set<IFailureReporter>(new Reporter());
+        Services.Set<IFailureSystem>(new Recorder());
         return 0;
     }
 
@@ -30,51 +32,60 @@ public sealed class HostEntryPoint(RuntimeConfiguration configuration)
 
     public override void Dispose()
     {
-        Services.Remove<IFailureReporter>();
+        Services.Remove<IFailureSystem>();
         Events.Add("host:dispose");
     }
 
-    private sealed class Reporter : IFailureReporter
+    // Writes failures down; only a critical one stops the engine, so a bad frame lets the loop go on
+    private sealed class Recorder : IFailureSystem
     {
-        public bool Report(Exception exception, FailureType type, bool critical, IQuantumObject? sender = null)
+        public ICatalog<FailureLevel, FailureReaction> Reactions { get; } = new SimpleCatalog<FailureLevel, FailureReaction>();
+
+        public ICatalog<(FailureKind Kind, FailureLevel Level), FailureReaction> KindReactions { get; } =
+            new SimpleCatalog<(FailureKind Kind, FailureLevel Level), FailureReaction>();
+
+        public FailureReaction ReactionTo(Failure failure) =>
+            failure.Level == FailureLevel.CriticalError ? FailureReactions.Default(failure.Level) : FailureReaction.None;
+
+        public FailureReaction Report(Failure failure)
         {
-            Events.Add($"report:{type}:{exception.Message}");
-            return critical;
+            Events.Add($"report:{failure.Level}:{failure.Exception?.Message ?? failure.Message}");
+            failure.MarkReported(ReactionTo(failure));
+            return failure.Reaction!.Value;
         }
+
+        public IDisposable AddHandler(IFailureHandler handler, FailureFilter filter = default) => throw new NotSupportedException();
     }
 
-    private sealed class Registry : IServiceRegistry
+    // The Kernel only: catalogs of its own, as Stellar.Core would have
+    private sealed class ServiceCatalog : SimpleCatalog<Type, object>, IServiceCatalog;
+
+    private class SimpleCatalog<TKey, TValue> : ICatalog<TKey, TValue>
+        where TKey : notnull
     {
-        private readonly Dictionary<Type, object> _services = new();
+        private readonly Dictionary<TKey, TValue> _items = new();
 
-        public void Set<TService>(TService service) where TService : class
-        {
-            lock (_services)
-            {
-                _services[typeof(TService)] = service;
-            }
-        }
+        public int Count { get { lock (_items) return _items.Count; } }
 
-        public TService? Find<TService>() where TService : class
-        {
-            lock (_services)
-            {
-                return _services.GetValueOrDefault(typeof(TService)) as TService;
-            }
-        }
+        public IReadOnlyCollection<TKey> Keys { get { lock (_items) return _items.Keys.ToArray(); } }
 
-        public TService Get<TService>() where TService : class
-        {
-            return Find<TService>() ?? throw new InvalidOperationException(typeof(TService).Name);
-        }
+        public IReadOnlyCollection<TValue> Values { get { lock (_items) return _items.Values.ToArray(); } }
 
-        public bool Remove<TService>() where TService : class
-        {
-            lock (_services)
-            {
-                return _services.Remove(typeof(TService));
-            }
-        }
+        public bool Contains(TKey key) { lock (_items) return _items.ContainsKey(key); }
+
+        public bool TryGet(TKey key, [MaybeNullWhen(false)] out TValue value) { lock (_items) return _items.TryGetValue(key, out value); }
+
+        public TValue Get(TKey key) => TryGet(key, out var value) ? value : throw new KeyNotFoundException(key.ToString());
+
+        public void Set(TKey key, TValue value) { lock (_items) _items[key] = value; }
+
+        public bool TryAdd(TKey key, TValue value) { lock (_items) return _items.TryAdd(key, value); }
+
+        public bool Remove(TKey key) { lock (_items) return _items.Remove(key); }
+
+        public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() { lock (_items) return _items.ToList().GetEnumerator(); }
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }
 

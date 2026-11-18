@@ -1,6 +1,8 @@
+using Stellar.Kernel.Failures;
 using Stellar.Kernel;
 using Stellar.Kernel.EntryPoint;
 using Stellar.Kernel.Lifecycle;
+using Stellar.Kernel.Profiling;
 using Stellar.Kernel.Quantization;
 using Stellar.Kernel.Timing;
 using Stellar.Runtime.Diagnostics;
@@ -19,13 +21,13 @@ public sealed class MainLoopTests : IDisposable
     private readonly MainThreadDispatcher _dispatcher = new();
     private readonly EngineControl _control = new();
     private readonly ManualTimeSource _source = new();
-    private readonly RuntimeCatcher _catcher;
+    private readonly Catcher _catcher;
     private readonly TimeSystem _time;
     private readonly MainLoops _loops;
 
     public MainLoopTests()
     {
-        _catcher = new RuntimeCatcher(CatchLevel.MainLoop, new RuntimeLog(fallback: _output));
+        _catcher = new RuntimeCatchers(new RuntimeLog(fallback: _output), () => null, () => false).MainLoop;
         _time = new TimeSystem(_source, 0);
         _loops = new MainLoops(new MainLoopOptions { Name = "Main", MaxDeltaTime = 0 }, _time, _dispatcher, _catcher,
             _control);
@@ -47,6 +49,35 @@ public sealed class MainLoopTests : IDisposable
             _source.Now = time;
             Loop.RunFrame(time);
         }
+    }
+
+    [Fact]
+    public void ARecordedLoop_MarksFramesAndPhases_AndParticipantsOnDemand()
+    {
+        var engine = new RecordedEngine();
+        var session = new RecordingSession(ProfilerDetail.Participants);
+        Loop.Add(new Participant("a", _calls));
+
+        using (Profiler.Attach(engine, session))
+        using (EngineScope.Enter(engine))
+            Frames(0, 0.5);
+
+        var events = session.Events;
+        var loop = ProfilerMarkers.Register("Loop.Main");
+        var update = ProfilerMarkers.Register("Loop.Update");
+        var participant = ProfilerMarkers.Register(typeof(Participant).FullName!);
+
+        events.Where(e => e.Kind == ProfilerEventKind.Frame).Select(e => (e.Marker, e.Value)).Should().Equal((loop, 0L), (loop, 1L));
+        events.Count(e => e.Kind == ProfilerEventKind.Begin).Should().Be(events.Count(e => e.Kind == ProfilerEventKind.End));
+        events.Should().Contain(e => e.Marker == update && e.Kind == ProfilerEventKind.Begin);
+        events.Should().Contain(e => e.Marker == participant && e.Kind == ProfilerEventKind.Begin);
+        events.Should().Contain(e => ProfilerMarkers.NameOf(e.Marker) == "Memory.AllocatedInFrame");
+
+        // Not recorded any more: nothing is written
+        var count = events.Count;
+        using (EngineScope.Enter(engine))
+            Frames(1);
+        session.Events.Should().HaveCount(count);
     }
 
     [Fact]
@@ -302,7 +333,7 @@ public sealed class MainLoopTests : IDisposable
 
         while (!invoked.IsCompleted)
         {
-            _dispatcher.Drain(_catcher);
+            _dispatcher.Drain(_catcher, CatchLevel.MainLoop);
             Thread.Sleep(1);
         }
 
@@ -315,7 +346,7 @@ public sealed class MainLoopTests : IDisposable
     {
         var mainThread = Environment.CurrentManagedThreadId;
 
-        var after = MainThreadPump.Run(_dispatcher, _catcher, async () =>
+        var after = MainThreadPump.Run(_dispatcher, _catcher, CatchLevel.MainLoop, async () =>
         {
             await Task.Delay(10);
             await Task.Run(() => { });
@@ -351,7 +382,7 @@ public sealed class MainLoopTests : IDisposable
 
     private sealed class NotAParticipant : IQuant
     {
-        public IIdentifier UID => throw new NotSupportedException();
+        public Identifier UID => throw new NotSupportedException();
 
         public IMetaQuant Meta => throw new NotSupportedException();
 
@@ -370,7 +401,7 @@ public sealed class MainLoopTests : IDisposable
 
         public Action<double>? OnFixed { get; set; }
 
-        public IIdentifier UID => throw new NotSupportedException();
+        public Identifier UID => throw new NotSupportedException();
 
         public IMetaQuant Meta => throw new NotSupportedException();
 
@@ -381,58 +412,87 @@ public sealed class MainLoopTests : IDisposable
             return null;
         }
 
-        public void PreUpdate<TContext>(ref readonly TContext context)
-            where TContext : IFrameContext, allows ref struct
+        public void PreUpdate(in FrameContext context)
         {
             Record(Phases.Update, in context);
         }
 
-        public void FixedUpdate<TContext>(ref readonly TContext context)
-            where TContext : IFrameContext, allows ref struct
+        public void FixedUpdate(in FrameContext context)
         {
             Record(Phases.Fixed, in context);
             OnFixed?.Invoke(context.DeltaTime);
         }
 
-        public void Update<TContext>(ref readonly TContext context)
-            where TContext : IFrameContext, allows ref struct
+        public void Update(in FrameContext context)
         {
             Record(Phases.Update, in context);
             OnUpdate?.Invoke(context.FrameIndex);
         }
 
-        public void PostUpdate<TContext>(ref readonly TContext context)
-            where TContext : IFrameContext, allows ref struct
+        public void PostUpdate(in FrameContext context)
         {
             Record(Phases.Update, in context);
         }
 
-        public void PreRender<TContext>(ref readonly TContext context)
-            where TContext : IFrameContext, allows ref struct
+        public void PreRender(in FrameContext context)
         {
             Record(Phases.Render, in context);
         }
 
-        public void Render<TContext>(ref readonly TContext context)
-            where TContext : IFrameContext, allows ref struct
+        public void Render(in FrameContext context)
         {
             Record(Phases.Render, in context);
         }
 
-        public void PostRender<TContext>(ref readonly TContext context)
-            where TContext : IFrameContext, allows ref struct
+        public void PostRender(in FrameContext context)
         {
             Record(Phases.Render, in context);
         }
 
         // Participants of the update group only record Update itself, to keep the expectations short
-        private void Record<TContext>(Phases group, ref readonly TContext context)
-            where TContext : IFrameContext, allows ref struct
+        private void Record(Phases group, in FrameContext context)
         {
             if ((phases & group) == 0) return;
             if (group == Phases.Update && context.Phase != FramePhase.Update && phases != Phases.All) return;
 
             calls.Add($"{name} {context.Phase} {context.FrameIndex} {context.DeltaTime:0.###}");
         }
+    }
+
+    private sealed class RecordingSession(ProfilerDetail detail)
+        : IProfilerSession
+    {
+        private readonly List<ProfilerEvent> _events = [];
+
+        public ProfilerDetail Detail { get; } = detail;
+
+        public IReadOnlyList<ProfilerEvent> Events
+        {
+            get
+            {
+                lock (_events) return _events.ToArray();
+            }
+        }
+
+        public void Write(in ProfilerEvent profilerEvent)
+        {
+            lock (_events) _events.Add(profilerEvent);
+        }
+    }
+
+    private sealed class RecordedEngine
+        : IEngineInstance
+    {
+        public string Name => "Recorded";
+
+        public IEngineControl Control => throw new NotSupportedException();
+
+        public ITimeSystem Time => throw new NotSupportedException();
+
+        public IMainLoops Loops => throw new NotSupportedException();
+
+        public Stellar.Kernel.Threading.IMainThreadDispatcher Dispatcher => throw new NotSupportedException();
+
+        public Stellar.Kernel.Services.IServiceCatalog? Services => null;
     }
 }

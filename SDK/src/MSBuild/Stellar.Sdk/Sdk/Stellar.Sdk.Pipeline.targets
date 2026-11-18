@@ -29,11 +29,30 @@
         <_StellarHasRuntimeConfiguration Condition="'$(_StellarHasProjectFile)' == 'true' and '$(StellarEnableRuntimeConfiguration)' != 'false'">true</_StellarHasRuntimeConfiguration>
     </PropertyGroup>
 
-    <UsingTask TaskName="Stellar.Sdk.Tasks.ResolveStellarProject" AssemblyFile="$(StellarTasksAssembly)"/>
-    <UsingTask TaskName="Stellar.Sdk.Tasks.GenerateRuntimeConfiguration" AssemblyFile="$(StellarTasksAssembly)"/>
-    <UsingTask TaskName="Stellar.Sdk.Tasks.GenerateStellarLauncher" AssemblyFile="$(StellarTasksAssembly)"/>
-    <UsingTask TaskName="Stellar.Sdk.Tasks.GenerateLauncherDependencyFile" AssemblyFile="$(StellarTasksAssembly)"/>
-    <UsingTask TaskName="Stellar.Sdk.Tasks.CompileStellarResources" AssemblyFile="$(StellarTasksAssembly)"/>
+    <!--
+        The tasks are loaded from a copy, made once per build of the SDK in the temp folder of the user. An IDE keeps
+        its MSBuild running and the tasks loaded: loaded from the NuGet cache, they would hold the package of the SDK,
+        and the engine packed again under the same version could not replace it while a game is open.
+    -->
+    <PropertyGroup>
+        <_StellarTasksSource>$([System.IO.Path]::GetDirectoryName('$(StellarTasksAssembly)'))</_StellarTasksSource>
+        <_StellarTasksShadow Condition="Exists('$(StellarTasksAssembly)')">$([System.IO.Path]::GetTempPath())stellar-sdk-tasks/$([System.IO.File]::GetLastWriteTime('$(StellarTasksAssembly)').Ticks)/</_StellarTasksShadow>
+        <_StellarTasksLoaded Condition="'$(_StellarTasksShadow)' != ''">$(_StellarTasksShadow)$([System.IO.Path]::GetFileName('$(StellarTasksAssembly)'))</_StellarTasksLoaded>
+        <_StellarTasksLoaded Condition="'$(_StellarTasksLoaded)' == '' or '$(StellarShadowTasks)' == 'false'">$(StellarTasksAssembly)</_StellarTasksLoaded>
+    </PropertyGroup>
+
+    <UsingTask TaskName="Stellar.Sdk.Tasks.ResolveStellarProject" AssemblyFile="$(_StellarTasksLoaded)"/>
+    <UsingTask TaskName="Stellar.Sdk.Tasks.GenerateRuntimeConfiguration" AssemblyFile="$(_StellarTasksLoaded)"/>
+    <UsingTask TaskName="Stellar.Sdk.Tasks.GenerateStellarLauncher" AssemblyFile="$(_StellarTasksLoaded)"/>
+    <UsingTask TaskName="Stellar.Sdk.Tasks.GenerateLauncherDependencyFile" AssemblyFile="$(_StellarTasksLoaded)"/>
+    <UsingTask TaskName="Stellar.Sdk.Tasks.CompileStellarResources" AssemblyFile="$(_StellarTasksLoaded)"/>
+
+    <Target Name="_StellarShadowTasks" Condition="'$(_StellarTasksLoaded)' != '$(StellarTasksAssembly)' and !Exists('$(_StellarTasksLoaded)')">
+        <ItemGroup>
+            <_StellarTaskFile Include="$(_StellarTasksSource)/*.*"/>
+        </ItemGroup>
+        <Copy SourceFiles="@(_StellarTaskFile)" DestinationFolder="$(_StellarTasksShadow)" SkipUnchangedFiles="true" Retries="3"/>
+    </Target>
 
     <!-- A project that needs its configuration must have it -->
     <Target Name="StellarValidateProject" BeforeTargets="PrepareForBuild">
@@ -44,7 +63,7 @@
     <!-- Parses .stellar.project: it decides what is compiled, copied and embedded -->
     <Target Name="StellarResolveProject"
             Condition="'$(_StellarHasProjectFile)' == 'true'"
-            DependsOnTargets="StellarValidateProject;$(StellarResolveProjectDependsOn)"
+            DependsOnTargets="_StellarShadowTasks;StellarValidateProject;$(StellarResolveProjectDependsOn)"
             BeforeTargets="BeforeCompile;AssignTargetPaths">
         <ResolveStellarProject ConfigurationFile="$(MSBuildProjectDirectory)/$(StellarProjectConfigurationFile)"
                                AssemblyName="$(AssemblyName)">
@@ -167,7 +186,7 @@
     </Target>
 
     <!-- The source of the launcher, rewritten only when it changes -->
-    <Target Name="_StellarLauncherSource" DependsOnTargets="ResolveAssemblyReferences">
+    <Target Name="_StellarLauncherSource" DependsOnTargets="_StellarShadowTasks;ResolveAssemblyReferences">
         <GenerateStellarLauncher Application="$(AssemblyName)"
                                  OutputFile="$(_StellarLauncherSource)"
                                  Title="$(StellarProjectName)"

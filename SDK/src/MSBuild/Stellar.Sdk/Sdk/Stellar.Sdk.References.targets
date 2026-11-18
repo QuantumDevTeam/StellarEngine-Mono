@@ -13,6 +13,47 @@
         evaluation time, so restore and the IDE see the real references. No custom task is involved.
     -->
 
+    <!--
+        A dependency is a name, not a file: an IDE shows an item it does not know as a file of the project, and a
+        missing one at that. Rider shows the items written in the project file whatever they say, so a game declares a
+        module as a package (below); StellarDependency stays for module descriptors and older projects.
+    -->
+    <ItemDefinitionGroup>
+        <StellarDependency>
+            <Visible>false</Visible>
+        </StellarDependency>
+    </ItemDefinitionGroup>
+
+    <!--
+        A game declares its modules in a property, which no IDE shows as a file:
+            <StellarDependencies>Stellar.FileSystem;Stellar.Audio</StellarDependencies>
+        The items are made here, in the SDK, where the IDE does not look for files of the project.
+    -->
+    <ItemGroup Condition="'$(StellarDependencies)' != ''">
+        <StellarDependency Include="$(StellarDependencies)"/>
+    </ItemGroup>
+
+    <!--
+        A module may also be declared as a package: <PackageReference Include="Stellar.FileSystem"/>, by hand or from
+        the NuGet window of the IDE (the feed StellarLocal). A package the catalog knows is a module: it is taken out of
+        the packages here and becomes a StellarDependency, then a reference to the version of this installation, the
+        package or the sources, as for every module. Its own Version, if any, does not count.
+    -->
+    <ItemGroup>
+        <_StellarDeclaredModule Include="@(PackageReference)"/>
+        <_StellarDeclaredPackage Include="@(_StellarDeclaredModule)"/>
+        <_StellarDeclaredPackage Remove="@(StellarModuleInfo)"/>
+        <_StellarDeclaredModule Remove="@(_StellarDeclaredPackage)"/>
+        <PackageReference Remove="@(_StellarDeclaredModule)"/>
+        <StellarDependency Include="@(_StellarDeclaredModule->'%(Identity)')"/>
+    </ItemGroup>
+
+    <!-- A game: packages, or sources in Debug when its solution works on the engine (Stellar.Sdk.Defaults.props) -->
+    <PropertyGroup Condition="'$(StellarPrecompiled)' == ''">
+        <StellarPrecompiled Condition="'$(StellarEngine)' == 'Sources' and ('$(Configuration)' == 'Debug' or '$(Configuration)' == '')">false</StellarPrecompiled>
+        <StellarPrecompiled Condition="'$(StellarPrecompiled)' == ''">true</StellarPrecompiled>
+    </PropertyGroup>
+
     <!-- What every kind of project gets implicitly. The core itself depends on the Kernel only -->
     <ItemGroup Condition="'$(StellarSdkUsage)' != ''">
         <StellarDependency Include="Stellar.Kernel" Condition="'$(StellarImplicitKernelReference)' != 'false'"/>
@@ -39,12 +80,21 @@
         <_StellarUnknownModule Remove="@(StellarModuleInfo)"/>
     </ItemGroup>
 
-    <!-- How each one is linked: pinned by the manifest, or by the project -->
+    <!--
+        How each one is linked: pinned by the manifest, or by the project. The metadata is LinkMode, not Link: Link is
+        the display path of a linked file to MSBuild and the IDEs, and a reference made from the catalog carries its
+        metadata, so it would show up as a file of the project. A catalog written before 0.9 has Link: it is read
+        until 'stellar modules sync' writes it again.
+    -->
     <ItemGroup>
-        <_StellarAsSources Include="@(_StellarResolvedModule->WithMetadataValue('Link', 'Sources'))"/>
-        <_StellarAsPackage Include="@(_StellarResolvedModule->WithMetadataValue('Link', 'Package'))"/>
-        <_StellarAsSources Include="@(_StellarResolvedModule->WithMetadataValue('Link', 'Default'))" Condition="'$(StellarPrecompiled)' != 'true'"/>
-        <_StellarAsPackage Include="@(_StellarResolvedModule->WithMetadataValue('Link', 'Default'))" Condition="'$(StellarPrecompiled)' == 'true'"/>
+        <_StellarResolvedModule Update="@(_StellarResolvedModule)">
+            <LinkMode Condition="'%(_StellarResolvedModule.LinkMode)' == ''">%(_StellarResolvedModule.Link)</LinkMode>
+            <Link Condition="'%(_StellarResolvedModule.Link)' != ''"/>
+        </_StellarResolvedModule>
+        <_StellarAsSources Include="@(_StellarResolvedModule->WithMetadataValue('LinkMode', 'Sources'))"/>
+        <_StellarAsPackage Include="@(_StellarResolvedModule->WithMetadataValue('LinkMode', 'Package'))"/>
+        <_StellarAsSources Include="@(_StellarResolvedModule->WithMetadataValue('LinkMode', 'Default'))" Condition="'$(StellarPrecompiled)' != 'true'"/>
+        <_StellarAsPackage Include="@(_StellarResolvedModule->WithMetadataValue('LinkMode', 'Default'))" Condition="'$(StellarPrecompiled)' == 'true'"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -57,5 +107,34 @@
                Text="Unknown Stellar modules: @(_StellarUnknownModule). A module is known once its folder (with a .stellar.module file) is under modules/ of the installation, or added with 'stellar modules add', and 'stellar modules sync' ran."/>
         <Warning Condition="'$(_StellarSourcesMissing)' == 'true'"
                  Text="The sources of the core are not in '$(StellarRoot)', building against the packages instead."/>
+
+        <!-- A module of the installation taken as a package must have been packed: say how, instead of a failed restore -->
+        <ItemGroup>
+            <_StellarPackedModule Include="@(_StellarAsPackage)" Condition="'%(_StellarAsPackage.Source)' == 'Discovered'">
+                <PackageFile>$(StellarPackagesDir)%(Identity).$([System.String]::Copy('%(Version)').Replace('[', '').Replace(']', '')).nupkg</PackageFile>
+            </_StellarPackedModule>
+            <_StellarUnpackedModule Include="@(_StellarPackedModule)" Condition="!Exists('%(_StellarPackedModule.PackageFile)')"/>
+        </ItemGroup>
+        <Error Condition="'@(_StellarUnpackedModule)' != ''"
+               Text="@(_StellarUnpackedModule->'%(Identity) %(Version)', ', ') has no package in $(StellarPackagesDir). Pack the modules of the installation: stellar modules build --pack"/>
+    </Target>
+
+    <!--
+        Sources are loaded by the IDE only from the solution: a module built from its sources must be in the .sln, or
+        Rider cannot resolve its namespaces. Built by the IDE or for a solution, the project says which is missing.
+    -->
+    <Target Name="StellarCheckSolution" BeforeTargets="ResolveProjectReferences"
+            Condition="'$(StellarCheckSolution)' != 'false' and '$(StellarIsEngineProject)' != 'true' and '$(StellarPrecompiled)' != 'true' and '$(SolutionPath)' != '' and '$(SolutionPath)' != '*Undefined*' and Exists('$(SolutionPath)')">
+        <PropertyGroup>
+            <_StellarSolutionText>$([System.IO.File]::ReadAllText('$(SolutionPath)'))</_StellarSolutionText>
+        </PropertyGroup>
+        <ItemGroup>
+            <_StellarSourceModule Include="@(_StellarAsSources)">
+                <ProjectFile>$([System.IO.Path]::GetFileName('%(ProjectPath)'))</ProjectFile>
+            </_StellarSourceModule>
+            <_StellarNotInSolution Include="@(_StellarSourceModule)" Condition="!$(_StellarSolutionText.Contains('%(_StellarSourceModule.ProjectFile)'))"/>
+        </ItemGroup>
+        <Warning Condition="'@(_StellarNotInSolution)' != ''"
+                 Text="Not in $([System.IO.Path]::GetFileName('$(SolutionPath)')), so the IDE does not load their sources: @(_StellarNotInSolution, ', '). Write the solution again: stellar solution sync"/>
     </Target>
 </Project>

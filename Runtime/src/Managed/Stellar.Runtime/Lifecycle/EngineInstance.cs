@@ -17,7 +17,7 @@ public sealed class EngineInstance
 {
     private static readonly ConcurrentDictionary<string, EngineInstance> Running = new(StringComparer.Ordinal);
 
-    private readonly Func<IServiceRegistry?> _services;
+    private readonly Func<IServiceCatalog?> _services;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EngineInstance"/> class.
@@ -29,7 +29,7 @@ public sealed class EngineInstance
     /// <param name="dispatcher">The dispatcher of the main thread.</param>
     /// <param name="services">The services of the engine, once there are any.</param>
     public EngineInstance(string name, EngineControl control, TimeSystem time, MainLoops loops,
-        MainThreadDispatcher dispatcher, Func<IServiceRegistry?> services)
+        MainThreadDispatcher dispatcher, Func<IServiceCatalog?> services)
     {
         Control = control;
         Time = time;
@@ -60,7 +60,7 @@ public sealed class EngineInstance
     public IMainThreadDispatcher Dispatcher { get; }
 
     /// <inheritdoc/>
-    public IServiceRegistry? Services => _services();
+    public IServiceCatalog? Services => _services();
 
     /// <inheritdoc/>
     public void Dispose()
