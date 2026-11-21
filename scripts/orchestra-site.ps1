@@ -8,7 +8,7 @@
 
         /                    the home of StellarEngine: getting started, what the orchestra is made of
         /guide/              the guide of the whole engine: Docs/Engine of the core (installing, architecture,
-                             modules, the orchestra, the project), with README, CONTRIBUTING, LICENSE, CLA at /
+                             modules, the orchestra, the project), with README, CONTRIBUTING, LICENSE at /
         /core/               the core as a component: the rest of its Docs/, /core/api/ its API reference
         /modules/<Module>/   the Docs/ of each module (each also has a site of its own)
         /tools/<Tool>/       the same for tools
@@ -69,7 +69,7 @@ $rows = [System.Collections.Generic.List[string]]::new()
 # ---- The guide of the engine ----
 # Docs/Engine of the core: the pages about the engine as a whole live there, published here only
 $content.Add([ordered]@{ src = 'Docs/Engine'; dest = 'guide'; files = @('**/*.md', 'toc.yml') })
-$content.Add([ordered]@{ files = @('README.md', 'CONTRIBUTING.md', 'LICENSE.md', 'CLA.md') })
+$content.Add([ordered]@{ files = @('README.md', 'CONTRIBUTING.md', 'LICENSE.md') })
 
 # ---- The core, a component ----
 $content.Add([ordered]@{ src = 'Docs'; dest = 'core'; files = @('**/*.md', 'toc.yml'); exclude = @('Engine/**') })

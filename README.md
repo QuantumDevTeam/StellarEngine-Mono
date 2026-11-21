@@ -1,6 +1,6 @@
 # StellarEngine
 
-Licensed under PolyForm Noncommercial 1.0.0. See [LICENSE.md](LICENSE.md) and [CLA.md](CLA.md).
+Licensed under PolyForm Noncommercial 1.0.0. See [LICENSE.md](LICENSE.md).
 
 <img alt="StellarEngine" height="256" src="Shared/Branding/stellar_1x1.svg" width="256"/>
 

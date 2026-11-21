@@ -96,7 +96,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".root", ".root", "{9CBB857E
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{4B2AC1C6-31E4-429A-8073-1A63FD20D65E}"
 	ProjectSection(SolutionItems) = preProject
-		CLA.md = CLA.md
 		CONTRIBUTING.md = CONTRIBUTING.md
 		LICENSE.md = LICENSE.md
 		NOTICE = NOTICE
