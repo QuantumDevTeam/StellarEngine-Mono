@@ -25,4 +25,8 @@
 
     <Import Project="$(StellarModuleCatalog)"
             Condition="'$(StellarUseModuleCatalog)' != 'false' and '$(StellarModuleCatalog)' != '' and Exists('$(StellarModuleCatalog)')"/>
+
+    <!-- The modules of the solution: the libraries of a game, always sources (Stellar.Tools.Solutions.SolutionModules) -->
+    <Import Project="$(StellarSolutionModuleCatalog)"
+            Condition="'$(StellarUseModuleCatalog)' != 'false' and '$(StellarSolutionModuleCatalog)' != '' and Exists('$(StellarSolutionModuleCatalog)')"/>
 </Project>

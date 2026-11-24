@@ -4,14 +4,22 @@ name: Mirror
 #
 # The mirror is never worked in: every commit of it is a snapshot made by scripts/mirror.ps1, here or on a machine.
 # This workflow takes the list of components from the .orchestra file of the last snapshot, clones each at its
-# default branch, makes a new snapshot when anything changed, pushes it, and starts the docs workflow (a push made
-# with the token of a workflow starts no other workflow by itself).
+# default branch, makes a new snapshot when anything changed and pushes it. A push with the token of an app starts the
+# workflows of the mirror as any push does: the docs workflow builds the site.
 #
 # It lives in the core like everything the mirror holds, but runs only where the repository variable
 # STELLAR_MIRROR is 'true' (Settings -> Secrets and variables -> Actions -> Variables): in the mirror.
 # Public components work with the token of the workflow. A component it cannot clone (a private repository) is kept
 # as the mirror has it; the secret STELLAR_MIRROR_TOKEN (a fine-grained token with read access to their contents)
 # lets the workflow refresh private ones too.
+#
+# The rulesets of the mirror let nobody write its branch, and the token of a workflow can neither pass a ruleset nor
+# change a file of .github/workflows/, which a snapshot does whenever the core did. So the snapshot is pushed with the
+# token of a GitHub App of the organization. Set once:
+#   - the app: repository permissions Contents and Workflows, read and write; installed on the mirror only;
+#   - the mirror, Settings -> Secrets and variables -> Actions: the variable STELLAR_MIRROR_APP_ID (its client ID) and
+#     the secret STELLAR_MIRROR_APP_KEY (its private key);
+#   - the mirror, Settings -> Rules -> the ruleset of the branch: the app in the bypass list.
 # The first snapshot comes from a machine: scripts/mirror.ps1 -Push. After that this workflow is the only writer:
 # on a machine, mirror.ps1 without -Push shows the next snapshot, Run workflow here publishes it.
 
@@ -22,7 +30,6 @@ on:
 
 permissions:
   contents: write
-  actions: write
 
 concurrency:
   group: mirror
@@ -40,12 +47,21 @@ jobs:
           # Its own credentials would add a second Authorization header to every request to github.com
           persist-credentials: false
 
+      # Writes the mirror: a token of this job only, for this repository and these two permissions
+      - name: Token of the mirror app
+        id: app
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.STELLAR_MIRROR_APP_ID }}
+          private-key: ${{ secrets.STELLAR_MIRROR_APP_KEY }}
+          permission-contents: write
+          permission-workflows: write
+
       - name: Clone the components
         id: workspace
         shell: pwsh
         env:
           COMPONENTS_TOKEN: ${{ secrets.STELLAR_MIRROR_TOKEN || github.token }}
-          MIRROR_TOKEN: ${{ github.token }}
         run: |
           if (-not (Test-Path .orchestra)) {
             throw 'No .orchestra here: make the first snapshot on a machine with scripts/mirror.ps1 -Push'
@@ -66,8 +82,6 @@ jobs:
           }
 
           $mirrorRepository = 'https://github.com/${{ github.repository }}'
-          # The mirror itself is written with the token of this workflow
-          Set-Credentials $mirrorRepository $env:MIRROR_TOKEN
 
           $workspace = Join-Path $env:RUNNER_TEMP 'orchestra'
           $components = @((Get-Content .orchestra -Raw | ConvertFrom-Json).Components)
@@ -97,7 +111,15 @@ jobs:
       - name: Snapshot and push
         id: snapshot
         shell: pwsh
+        env:
+          MIRROR_TOKEN: ${{ steps.app.outputs.token }}
         run: |
+          # The same form of credentials as for the components: in a header, for both spellings of the repository
+          $basic = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("x-access-token:$env:MIRROR_TOKEN"))
+          foreach ($url in 'https://github.com/${{ github.repository }}', 'https://github.com/${{ github.repository }}.git') {
+            git config --global --replace-all "http.$url.extraheader" "AUTHORIZATION: basic $basic"
+          }
+
           $workspace = '${{ steps.workspace.outputs.path }}'
           $keep = @('${{ steps.workspace.outputs.keep }}' -split ',' | Where-Object { $_ })
 
@@ -150,8 +172,3 @@ jobs:
           if ($version.Contains('-')) { $flags += '--prerelease' }
           gh release create '${{ steps.snapshot.outputs.tag }}' --repo '${{ github.repository }}' --verify-tag --title "StellarEngine $version" --notes-file $notesFile @flags
           if ($LASTEXITCODE -ne 0) { throw 'gh release create failed' }
-
-      - name: Build the site
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run docs.yml --repo '${{ github.repository }}' --ref master

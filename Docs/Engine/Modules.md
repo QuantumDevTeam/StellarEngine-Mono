@@ -35,6 +35,9 @@ stellar modules add ../Stellar.Logging
 It is then part of the installation exactly like a folder of `modules/`, and gets a `NuGet.config` pointing at the
 local feed if it has none.
 
+A game's own libraries are modules too, of the solution of the game and not of the installation: see
+[Modules of a solution](../Formats/SolutionFile.md#modules-of-a-solution).
+
 ## What a module project gets
 
 The project of a module is nearly empty:

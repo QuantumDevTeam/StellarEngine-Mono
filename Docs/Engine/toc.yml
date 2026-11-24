@@ -10,6 +10,8 @@
   href: Modules.md
 - name: Installation and repositories
   href: Repository.md
+- name: Setting up the machine
+  href: PostInstallSetup.md
 - name: Project
   items:
     - name: README

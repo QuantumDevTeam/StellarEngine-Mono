@@ -1,4 +1,4 @@
-using Stellar.Kernel.Failures;
+using Stellar.Kernel.FailureSystem;
 using Stellar.Kernel.Lifecycle;
 using Stellar.Kernel.Profiling;
 

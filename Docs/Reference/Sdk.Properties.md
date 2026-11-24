@@ -32,6 +32,7 @@ The project wins over `config/`, `config/` over the defaults.
 | `StellarUseArtifactsOutput` | `true` on the engine side, `false` for games | `false`: the plain `bin/` and `obj/` next to the project |
 | `StellarArtifactsName` | `$(MSBuildProjectName)` | The folder of the project in `artifacts/bin` and `artifacts/obj` |
 | `StellarModuleCatalog` | `$(StellarRoot)manifests/.generated/stellar.modules.props` | The catalog of modules |
+| `StellarSolutionModuleCatalog` | `.stellar/stellar.modules.props` of the solution above the project, if there is one | The catalog of the modules of the solution, imported after `StellarModuleCatalog`. `StellarUseSolutionModuleCatalog=false` finds none |
 | `StellarUseModuleCatalog` | `true` | `false`: only the modules of the core exist |
 | `StellarUseLocalFeed` | `true` | `false`: the local feed is not added to restore |
 | `StellarImportCustomizations` | `true` | `false`: `config/` of the installation is not imported |

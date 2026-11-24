@@ -9,6 +9,11 @@
       "enum": ["Packages", "Sources"],
       "description": "How the projects take the engine: its packages (the default), or its sources in Debug, listed in the solution after 'stellar solution sync'"
     },
+    "Modules": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Folders of modules of the solution outside its directory, relative to it. Modules (folders with an <Id>.stellar.module file, level EndPoint) below the directory are found without being listed; 'stellar solution sync' writes them into .stellar/stellar.modules.props"
+    },
     "Run": {
       "type": "object",
       "description": "How 'stellar run' runs the solution",

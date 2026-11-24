@@ -6,32 +6,32 @@ namespace Stellar.Kernel.LoggingSystem;
 public enum LogLevel
 {
     /// <summary>
-    /// Any Information
-    /// </summary>
-    Info,
-
-    /// <summary>
     /// Debug message or information
     /// </summary>
-    Debug,
+    Debug = 0,
+
+    /// <summary>
+    /// Any Information
+    /// </summary>
+    Info = 1,
 
     /// <summary>
     /// Operation succeed
     /// </summary>
-    Success,
+    Success = 2,
 
     /// <summary>
     /// A Warning
     /// </summary>
-    Warning,
+    Warning = 3,
 
     /// <summary>
     /// An Error
     /// </summary>
-    Error,
+    Error = 4,
 
     /// <summary>
     /// An Exception
     /// </summary>
-    Exception
+    Exception = 5
 }

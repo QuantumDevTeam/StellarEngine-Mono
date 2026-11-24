@@ -2,7 +2,7 @@ using System.Reflection;
 using System.Runtime.ExceptionServices;
 using Stellar.Kernel.Configuration;
 using Stellar.Kernel.EntryPoint;
-using Stellar.Kernel.Failures;
+using Stellar.Kernel.FailureSystem;
 using Stellar.Kernel.Lifecycle;
 using Stellar.Kernel.LoggingSystem;
 using Stellar.Kernel.Services;

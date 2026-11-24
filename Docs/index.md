@@ -41,5 +41,6 @@ The JSON schemas of these files are published here, under [`/schemas/`](https://
 - [API reference](xref:Stellar.Kernel), generated from the code of `Stellar.Kernel`, `Stellar.Core`, `Stellar.Runtime` and `Stellar.Tools`
 - [SDK properties and items](Reference/Sdk.Properties.md)
 - [Diagnostics](Reference/Diagnostics.md)
+- [Migrating to 0.10](Migration-0.10.md)
 - [Migrating to 0.9](Migration-0.9.md)
 - [Migrating to 0.8](Migration-0.8.md)

@@ -1,4 +1,4 @@
-using Stellar.Kernel.Failures;
+using Stellar.Kernel.FailureSystem;
 using Stellar.Runtime.Diagnostics;
 
 namespace Stellar.Runtime.Failures;

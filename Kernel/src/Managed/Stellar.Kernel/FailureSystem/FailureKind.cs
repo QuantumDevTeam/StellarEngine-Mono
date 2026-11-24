@@ -1,6 +1,6 @@
 using System;
 
-namespace Stellar.Kernel.Failures;
+namespace Stellar.Kernel.FailureSystem;
 
 /// <summary>
 /// Where a failure comes from: the engine, a module, the file system, an audio module of a game.

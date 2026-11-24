@@ -5,6 +5,6 @@
     "allowPrerelease": false
   },
   "msbuild-sdks": {
-    "Stellar.Sdk": "0.4.0"
+    "Stellar.Sdk": "0.4.1"
   }
 }

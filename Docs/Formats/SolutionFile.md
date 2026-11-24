@@ -55,7 +55,34 @@ referenced project only from the solution, so with `Sources` the projects of the
 wrapper) go to the solution folder `Engine` and the modules of the installation to `Modules`, built by Debug only.
 
 `stellar solution sync` also adds a project you made in the directory of the solution, or a module you started to
-depend on. It writes the `.sln` from scratch: solution folders made by hand in the IDE are not kept.
+depend on. It writes the `.sln` from scratch: solution folders made by hand in the IDE are not kept. It first writes
+the catalog of the [modules of the solution](#modules-of-a-solution), since the references of the projects are read with it.
+
+## Modules of a solution
+
+A game keeps its own libraries (the code of a level, a tool, a game system) as modules, which follow the rules of the
+engine: a folder with a [`<Id>.stellar.module`](ModuleDescriptor.md) file, `"Level": "EndPoint"` (a custom module,
+`StellarSdkUsage` `Module`), depending on modules of lower levels, the engine's included.
+
+```text
+Demo/
+├── Demo.stellar.solution
+├── Demo/                       the game: <StellarDependencies>Stellar.FileSystem;DemoLib</StellarDependencies>
+└── DemoLib/
+    ├── DemoLib.stellar.module  { "Id": "DemoLib", "Level": "EndPoint", "Dependencies": ["Stellar.FileSystem"] }
+    └── DemoLib.csproj          the project: src/Managed/DemoLib/DemoLib.csproj works too
+```
+
+`stellar solution sync` finds the modules below the directory of the solution (up to three levels, a module ends
+the search), and those in `Modules` (folders relative to the solution, for libraries kept elsewhere). It writes them into
+`.stellar/stellar.modules.props`, a catalog of the format of the installation's, which the SDK finds from any project
+below the solution and imports after the catalog of the installation. From then on the game names `DemoLib` like any
+module: the SDK references it, the runtime configuration lists it, and the runtime loads it in a context of its own
+after its dependencies and starts its entry point.
+
+A module of a solution is always taken as sources, in every configuration: it is never packed. Its id must not be one of
+the installation, and it cannot depend on another module of its own level. Run `stellar solution sync` again after
+adding a module or changing a descriptor.
 
 ## `Run`
 

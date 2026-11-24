@@ -23,6 +23,12 @@ public sealed class StellarSolutionFile
     /// Gets or sets how <c>stellar run</c> runs the solution.
     /// </summary>
     public RunConfiguration? Run { get; set; }
+
+    /// <summary>
+    /// Gets or sets folders of modules of the solution outside its directory, relative to it. The modules below the
+    /// directory of the solution are found without being listed.
+    /// </summary>
+    public List<string> Modules { get; set; } = [];
 }
 
 /// <summary>

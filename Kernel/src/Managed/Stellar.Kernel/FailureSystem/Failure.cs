@@ -3,7 +3,7 @@ using System.Threading;
 using Stellar.Kernel.Lifecycle;
 using Stellar.Kernel.Quantization;
 
-namespace Stellar.Kernel.Failures;
+namespace Stellar.Kernel.FailureSystem;
 
 /// <summary>
 /// A failure of the engine: what went wrong, where, how seriously, and what was done about it.

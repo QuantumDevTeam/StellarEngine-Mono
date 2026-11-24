@@ -23,10 +23,21 @@ public static class ModuleDiscovery
         if (!settings.Enabled)
             return new string[0];
 
+        return Discover(settings.Directories.Select(installation.Resolve), settings.Depth);
+    }
+
+    /// <summary>
+    /// Finds the descriptor files below some folders: the search of an installation, and of a solution.
+    /// </summary>
+    /// <param name="directories">The folders to search; those that do not exist are skipped.</param>
+    /// <param name="depth">How many levels below each folder a module may be.</param>
+    /// <returns>The descriptor files, sorted.</returns>
+    public static IReadOnlyList<string> Discover(IEnumerable<string> directories, int depth)
+    {
         var found = new List<string>();
 
-        foreach (var directory in settings.Directories.Select(installation.Resolve).Where(Directory.Exists))
-            Search(directory, settings.Depth, found);
+        foreach (var directory in directories.Where(Directory.Exists))
+            Search(directory, depth, found);
 
         return found.Distinct().OrderBy(path => path, System.StringComparer.Ordinal).ToList();
     }
@@ -38,7 +49,11 @@ public static class ModuleDiscovery
 
         foreach (var child in Directory.GetDirectories(directory).OrderBy(path => path, System.StringComparer.Ordinal))
         {
-            if (Path.GetFileName(child).StartsWith("."))
+            var name = Path.GetFileName(child);
+
+            // Hidden folders and build output hold no modules of theirs
+            if (name.StartsWith(".") || name.Equals("bin", System.StringComparison.OrdinalIgnoreCase) ||
+                name.Equals("obj", System.StringComparison.OrdinalIgnoreCase))
                 continue;
 
             var descriptor = ModuleDescriptorFile.Find(child);

@@ -8,7 +8,7 @@ using Stellar.Kernel.Lifecycle;
 using Stellar.Kernel.Quantization;
 using Stellar.Kernel.Services;
 
-namespace Stellar.Kernel.Failures;
+namespace Stellar.Kernel.FailureSystem;
 
 /// <summary>
 /// Catches failures around suspicious calls, reports them, and lets the work go on, or stops it, as the reaction says.

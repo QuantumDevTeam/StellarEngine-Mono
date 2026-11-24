@@ -19,7 +19,8 @@ public sealed class SyncSolutionSettings
 }
 
 /// <summary>
-/// <c>stellar solution sync</c>: writes the .sln again, after a project was added or "Engine" switched.
+/// <c>stellar solution sync</c>: writes the catalog of the modules of the solution, then the .sln again, after a
+/// project or a module was added or "Engine" switched.
 /// </summary>
 public sealed class SyncSolutionCommand
     : Command<SyncSolutionSettings>
@@ -31,6 +32,9 @@ public sealed class SyncSolutionCommand
                        ?? throw new ToolException($"No {StellarSolution.Extension} in {directory} or above it");
 
         var home = StellarInstallation.Locate();
+
+        // First: the references of the projects are read with this catalog
+        SolutionModules.Sync(solution, home, ConsoleToolLogger.Instance);
         var path = solution.Sync(new SolutionGenerator(home.Root, new MSBuildProjectReferenceReader(), ConsoleToolLogger.Instance));
 
         AnsiConsole.MarkupLine($"[green]Solution written:[/] {path.EscapeMarkup()} [grey](engine: {(solution.File.Engine ?? "Packages").EscapeMarkup()})[/]");

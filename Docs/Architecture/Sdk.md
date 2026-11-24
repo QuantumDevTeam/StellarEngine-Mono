@@ -26,7 +26,7 @@ them, but Rider shows an item written in a project file as a file of the project
 The SDK version is pinned once, in `global.json`, not in every project:
 
 ```json
-{ "msbuild-sdks": { "Stellar.Sdk": "0.4.0" } }
+{ "msbuild-sdks": { "Stellar.Sdk": "0.4.1" } }
 ```
 
 The SDK itself comes from the local feed through `NuGet.config`. `stellar project new` and `stellar modules new`

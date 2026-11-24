@@ -1,6 +1,6 @@
 using Stellar.Kernel.Data.Collections;
 using Stellar.Kernel.Data.Registry;
-using Stellar.Kernel.Failures;
+using Stellar.Kernel.FailureSystem;
 using Stellar.Kernel.LoggingSystem;
 using Stellar.Kernel.Quantization;
 using Stellar.Kernel.Services;

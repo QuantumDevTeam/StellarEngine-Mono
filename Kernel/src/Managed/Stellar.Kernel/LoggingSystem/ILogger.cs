@@ -6,7 +6,7 @@ namespace Stellar.Kernel.LoggingSystem;
 /// Engine logger
 /// </summary>
 public interface ILogger
-    : IRegistrableQuant
+    : IQuant
 {
     /// <summary>
     /// Create log with formatting
@@ -20,4 +20,14 @@ public interface ILogger
     /// </summary>
     /// <param name="message">just message to write</param>
     void LogWithoutFormat(string message);
+
+    /// <summary>
+    /// TODO: summary
+    /// </summary>
+    void Start();
+
+    /// <summary>
+    /// TODO: summary
+    /// </summary>
+    void Stop();
 }

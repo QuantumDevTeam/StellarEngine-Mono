@@ -2,7 +2,7 @@ using System;
 using Stellar.Kernel.Data.Catalog;
 using Stellar.Kernel.Quantization;
 
-namespace Stellar.Kernel.Failures;
+namespace Stellar.Kernel.FailureSystem;
 
 /// <summary>
 /// The failures of one engine: what is done about them, and who hears of them.

@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using Stellar.Kernel.Configuration;
 using Stellar.Kernel.Data.Catalog;
 using Stellar.Kernel.EntryPoint;
-using Stellar.Kernel.Failures;
+using Stellar.Kernel.FailureSystem;
 using Stellar.Kernel.Lifecycle;
 using Stellar.Kernel.Quantization;
 using Stellar.Kernel.Services;

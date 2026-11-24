@@ -1,5 +1,5 @@
-using Stellar.Kernel.Failures;
 using System.Collections.Concurrent;
+using Stellar.Kernel.FailureSystem;
 using Stellar.Kernel.Threading;
 using Stellar.Runtime.Failures;
 

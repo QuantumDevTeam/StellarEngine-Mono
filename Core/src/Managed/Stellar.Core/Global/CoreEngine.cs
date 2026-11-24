@@ -5,7 +5,7 @@ using Stellar.Core.Native;
 using Stellar.Core.Services;
 using Stellar.Kernel.Data.Collections;
 using Stellar.Kernel.Data.Registry;
-using Stellar.Kernel.Failures;
+using Stellar.Kernel.FailureSystem;
 using Stellar.Kernel.Lifecycle;
 using Stellar.Kernel.LoggingSystem;
 using Stellar.Kernel.Quantization;
@@ -106,6 +106,7 @@ public sealed class CoreEngine
     /// <returns>Whether it had one.</returns>
     public static bool Release(IEngineInstance engine)
     {
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (engine is null || !Engines.TryGetValue(engine, out var core)) return false;
 
         Engines.Remove(engine);

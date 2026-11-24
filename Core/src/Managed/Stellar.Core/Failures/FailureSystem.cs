@@ -3,7 +3,7 @@ using Stellar.Core.Data.Collections;
 using Stellar.Core.Quantization;
 using Stellar.Kernel.Data.Catalog;
 using Stellar.Kernel.EntryPoint;
-using Stellar.Kernel.Failures;
+using Stellar.Kernel.FailureSystem;
 using Stellar.Kernel.Lifecycle;
 using Stellar.Kernel.LoggingSystem;
 

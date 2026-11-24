@@ -10,9 +10,13 @@
         <_StellarDescriptorAbove Condition="'$(StellarIsModule)' != 'true'">$([MSBuild]::GetDirectoryNameOfFileAbove('$(MSBuildProjectDirectory)', '$(StellarModuleId).stellar.module'))</_StellarDescriptorAbove>
 
         <!-- The catalog is stale when the descriptor is newer. Short conditions: nothing for a formatter to wrap -->
-        <_StellarCanCheckCatalog Condition="'$(StellarIsModule)' == 'true' and Exists('$(StellarModuleDescriptorFile)') and Exists('$(StellarModuleCatalog)')">true</_StellarCanCheckCatalog>
+        <!-- The catalog the module is in: the installation's, or the solution's (the catalog says which, with the command that writes it) -->
+        <_StellarCatalogOfModule>$(StellarModuleCatalogFile)</_StellarCatalogOfModule>
+        <_StellarCatalogOfModule Condition="'$(_StellarCatalogOfModule)' == ''">$(StellarModuleCatalog)</_StellarCatalogOfModule>
+        <StellarModuleSyncCommand Condition="'$(StellarModuleSyncCommand)' == ''">stellar modules sync</StellarModuleSyncCommand>
+        <_StellarCanCheckCatalog Condition="'$(StellarIsModule)' == 'true' and Exists('$(StellarModuleDescriptorFile)') and Exists('$(_StellarCatalogOfModule)')">true</_StellarCanCheckCatalog>
         <_StellarDescriptorTicks Condition="'$(_StellarCanCheckCatalog)' == 'true'">$([System.IO.File]::GetLastWriteTime('$(StellarModuleDescriptorFile)').Ticks)</_StellarDescriptorTicks>
-        <_StellarCatalogTicks Condition="'$(_StellarCanCheckCatalog)' == 'true'">$([System.IO.File]::GetLastWriteTime('$(StellarModuleCatalog)').Ticks)</_StellarCatalogTicks>
+        <_StellarCatalogTicks Condition="'$(_StellarCanCheckCatalog)' == 'true'">$([System.IO.File]::GetLastWriteTime('$(_StellarCatalogOfModule)').Ticks)</_StellarCatalogTicks>
         <_StellarCatalogStale Condition="'$(_StellarCanCheckCatalog)' == 'true' and $(_StellarDescriptorTicks) &gt; $(_StellarCatalogTicks)">true</_StellarCatalogStale>
     </PropertyGroup>
 
@@ -25,9 +29,9 @@
                Text="StellarSdkUsage=EngineCore is Stellar.Core itself. A core system is EngineCoreModule."/>
 
         <Warning Code="STLRB101" Condition="'$(_StellarDescriptorAbove)' != ''"
-                 Text="$(_StellarDescriptorAbove)$(StellarModuleId).stellar.module describes this project, but the module catalog does not know it yet: run 'stellar modules sync'."/>
+                 Text="$(_StellarDescriptorAbove)$(StellarModuleId).stellar.module describes this project, but the module catalog does not know it yet: run 'stellar modules sync' (a module of the installation) or 'stellar solution sync' (a module of a solution)."/>
         <Warning Code="STLRB102" Condition="'$(_StellarCatalogStale)' == 'true'"
-                 Text="$(StellarModuleDescriptorFile) changed after the module catalog was generated: run 'stellar modules sync'."/>
+                 Text="$(StellarModuleDescriptorFile) changed after the module catalog was generated: run '$(StellarModuleSyncCommand)'."/>
         <Warning Code="STLRB103" Condition="'$(StellarIsModule)' == 'true' and '$(_StellarSdkUsageFromLevel)' != 'true'
                                             and (('$(StellarModuleLevel)' == 'CoreModule' and '$(StellarSdkUsage)' != 'EngineCoreModule')
                                               or (('$(StellarModuleLevel)' == 'HighLevel' or '$(StellarModuleLevel)' == 'Runtime') and '$(StellarSdkUsage)' != 'EngineModule' and '$(StellarSdkUsage)' != 'ExecutableModule'))"

@@ -181,7 +181,7 @@ public static class ModuleResolver
         return descriptor;
     }
 
-    private static void ApplyConventions(ModuleDescriptor descriptor, string directory)
+    internal static void ApplyConventions(ModuleDescriptor descriptor, string directory)
     {
         descriptor.Version ??= StellarVersions.Engine;
         descriptor.Project ??= ModuleConventions.FindManagedProject(directory, descriptor.Id) ?? string.Empty;
@@ -189,7 +189,7 @@ public static class ModuleResolver
         descriptor.TestProjects ??= ModuleConventions.FindTestProjects(directory);
     }
 
-    private static ModuleDescriptor Copy(ModuleDescriptor source)
+    internal static ModuleDescriptor Copy(ModuleDescriptor source)
     {
         return new ModuleDescriptor
         {

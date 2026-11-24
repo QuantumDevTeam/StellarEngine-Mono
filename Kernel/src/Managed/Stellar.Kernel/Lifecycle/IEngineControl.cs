@@ -1,5 +1,5 @@
 using Stellar.Kernel.EntryPoint;
-using Stellar.Kernel.Failures;
+using Stellar.Kernel.FailureSystem;
 using Stellar.Kernel.Quantization;
 
 namespace Stellar.Kernel.Lifecycle;

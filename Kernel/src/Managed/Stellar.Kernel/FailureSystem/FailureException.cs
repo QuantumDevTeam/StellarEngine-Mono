@@ -1,6 +1,6 @@
 using System;
 
-namespace Stellar.Kernel.Failures;
+namespace Stellar.Kernel.FailureSystem;
 
 /// <summary>
 /// An exception of the engine: it carries its <see cref="Failure"/>.

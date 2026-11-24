@@ -1,4 +1,4 @@
-using Stellar.Kernel.Failures;
+using Stellar.Kernel.FailureSystem;
 
 namespace Stellar.Kernel.FileSystem;
 

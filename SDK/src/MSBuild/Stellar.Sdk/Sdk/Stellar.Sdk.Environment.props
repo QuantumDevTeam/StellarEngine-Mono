@@ -35,6 +35,16 @@
     </PropertyGroup>
 
     <!--
+        The catalog of the modules of a solution (a game's own libraries): .stellar/stellar.modules.props in the
+        directory of the solution, written by 'stellar solution sync' and found from any project below it. Catalog.targets
+        imports it after the catalog of the installation. Set the property to use another file, or to nothing for none.
+    -->
+    <PropertyGroup Condition="'$(StellarSolutionModuleCatalog)' == '' and '$(StellarUseSolutionModuleCatalog)' != 'false'">
+        <_StellarSolutionCatalogAbove>$([MSBuild]::GetDirectoryNameOfFileAbove('$(MSBuildProjectDirectory)', '.stellar/stellar.modules.props'))</_StellarSolutionCatalogAbove>
+        <StellarSolutionModuleCatalog Condition="'$(_StellarSolutionCatalogAbove)' != ''">$([MSBuild]::EnsureTrailingSlash('$(_StellarSolutionCatalogAbove)')).stellar/stellar.modules.props</StellarSolutionModuleCatalog>
+    </PropertyGroup>
+
+    <!--
         Which side of the engine a project is on. The engine side is everything of the installation but its games:
         the modules, the tools. It works on the engine as it is (sources in Debug) and builds into artifacts/. A game
         or a library, in projects/ or anywhere else, takes the engine from its packages and keeps bin/ and obj/ next

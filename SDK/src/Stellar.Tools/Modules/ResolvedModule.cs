@@ -17,7 +17,10 @@ public enum ModuleSource
     External,
 
     /// <summary>Declared by the manifest only: the module exists as a package.</summary>
-    Package
+    Package,
+
+    /// <summary>A module of a solution (level <c>EndPoint</c>), found by <c>stellar solution sync</c> beside the game.</summary>
+    Solution
 }
 
 /// <summary>

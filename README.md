@@ -141,5 +141,6 @@ Reference:
 Workflow:
 
 - [Contributing](CONTRIBUTING.md), [Git policy](Docs/Engine/GitPolicy.md), [versioning](Docs/Engine/Versioning.md)
+- [Migrating to 0.10](Docs/Migration-0.10.md)
 - [Migrating to 0.9](Docs/Migration-0.9.md)
 - [Migrating modules to 0.8](Docs/Migration-0.8.md)

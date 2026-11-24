@@ -1,6 +1,6 @@
 using System;
 
-namespace Stellar.Kernel.Failures;
+namespace Stellar.Kernel.FailureSystem;
 
 /// <summary>
 /// How serious a failure is: a fixed scale, from the least to the most serious, so levels compare.

@@ -3,7 +3,7 @@ using Stellar.Core.Failures;
 using Stellar.Core.Global;
 using Stellar.Kernel.Configuration;
 using Stellar.Kernel.EntryPoint;
-using Stellar.Kernel.Failures;
+using Stellar.Kernel.FailureSystem;
 using Stellar.Kernel.FileSystem;
 using Stellar.Kernel.Lifecycle;
 using Stellar.Kernel.LoggingSystem;
@@ -32,7 +32,11 @@ public class FailureSystemTests
 
         public void LogWithoutFormat(string message) => Lines.Add((LogLevel.Info, message));
 
-        public void Dispose()
+        public void Start()
+        {
+        }
+
+        public void Stop()
         {
         }
     }
